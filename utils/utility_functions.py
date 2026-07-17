@@ -1,18 +1,4 @@
-"""This file contains some utility functions used in various files throughout this repo.
-
-In short, functions in this file are called for e.g. fetching subdomain-related
-quantities and for utilizing symbolic representations of analytical solutions (e.g.
-creating source terms, setting initial values, compute errors, etc.). These analytical
-solutions are determined by the "manufactured_solution" key value in the params
-dictionary. Creation of source terms uses symbolic differentiation provided by sympy.
-Therefore, running other manufactured solutions than those already present is easily
-done by adding the expression for it where the manufactured solution is defined.
-Additionally, there are utility functions for construction of the 9x9 representation of
-a stiffness tensor representing a transversely isotropic media with arbitrary symmetry
-axis.
-
-
-"""
+"""This file contains some utility functions used in various files throughout this repo."""
 
 from typing import Optional, Union
 

@@ -1,5 +1,11 @@
 # mpsa_newmark_fractures
-This repository contains source code for the paper "NAME".
+This repository contains runscripts and model class setups needed for reproducing the results in the paper "Modeling of elastic wave propagation in fractured media with spring-type and frictional contact deformation models".
+
+That includes:
+* Runscripts for the convergence analyses.
+* Runscripts for all simulation examples.
+* Standardized model class setup for solving the elastic wave equation in media with deforming fractures using PorePy (https://github.com/pmgbergen/porepy).
+* Utility material which is used in the various simulations.
 
 ## Verification 
 ### Linear spring-type deformation

@@ -171,4 +171,4 @@ draw_multiple_loglog_slopes(
 plt.savefig(FIGURE_PATH, dpi=300, bbox_inches="tight")
 plt.close()
 
-print(f"Saved figure to {FIGURE_PATH}")
+print(f"\nSaved figure to {FIGURE_PATH}")

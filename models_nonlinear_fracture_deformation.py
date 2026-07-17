@@ -383,7 +383,7 @@ class MethodsForBartonBandisConvergenceSetup:
             max_incident_velocity = 3 * np.sqrt(3) / 2 * np.pi * f * U
 
             T_numerical = max_velocity / max_incident_velocity
-            print("T_numerical", T_numerical)
+            print("\nT_numerical", T_numerical)
 
             _, T_theoretical = self.compute_theoretical_T()
 

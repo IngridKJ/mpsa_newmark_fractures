@@ -251,7 +251,6 @@ class GeometryBoundaryConditionAndWaveFunction:
 
 
 class SelfConvergenceCBB(
-    IterativeSolverMixin,
     GeometryBoundaryConditionAndWaveFunction,
     ContactModelBartonBandisGapFunction,
 ):
@@ -263,7 +262,6 @@ class SelfConvergenceCBB(
 
 
 class SelfConvergenceCL(
-    IterativeSolverMixin,
     GeometryBoundaryConditionAndWaveFunction,
     ContactModelLinearGapFunction,
 ):

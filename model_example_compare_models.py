@@ -199,7 +199,6 @@ class GeometryBoundaryConditionAndWaveFunction:
 
 
 class CBB(
-    IterativeSolverMixin,
     GeometryBoundaryConditionAndWaveFunction,
     ContactModelBartonBandisGapFunction,
 ):

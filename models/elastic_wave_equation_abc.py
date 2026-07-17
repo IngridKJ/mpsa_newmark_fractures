@@ -1521,7 +1521,106 @@ class DynamicMomentumBalanceABCNonlinear(
             time_step_index=0,
             iterate_index=0,
         )
+
+class DynamicMomentumBalanceRadialReturn(DynamicMomentumBalanceABCNonlinear):
+    """Dynamic momentum balance with radial return contact mechanics formulation.
+    
+    For the radial return, the only difference is the tangential fracture deformation
+    equation, which is implemented in PorePy. For this to match the dynamic momentum
+    balance, the time increment of the displacemetn jump is exchanged with the
+    tangential velocity jump. The rest of the model class is identical to the
+    DynamicMomentumBalanceABCNonlinear class.
+    
+    """
+    
+    def tangential_fracture_deformation_equation(
+        self,
+        subdomains: list[pp.Grid],
+    ) -> pp.ad.Operator:
+        """Contact mechanics equation for the tangential constraints.
+
+        .. math::
+
+            \\mathbf{t}_t^{trial} &= \\mathbf{t}_t + c_{num} \\Delta \\mathbf{u}_t \\\\
+            \\mathbf{t}_t &= \\min\\left(
+                1,
+                -\\frac{b_p}{\\|\\mathbf{t}_t^{trial}\\|}
+            \\right) \\cdot \\mathbf{t}_t^{trial}
+
+        where :math:`b_p = \\max(\\text{friction\\_bound}, 0)` is the friction bound.
+
+        See e.g.: Eq. (48c) in Alart and Curnier, "A mixed formulation for frictional
+        contact problems prone to Newton like solution methods", CMAME, 1991,
+        DOI: 10.1016/0045-7825(91)90022-X.
+
+        """
+
+        # Basis vector combinations.
+        num_cells = sum([sd.num_cells for sd in subdomains])
+
+        # Mapping from a full vector to the tangential component.
+        nd_vec_to_tangential = self.tangential_component(subdomains)
+
+        # Basis vectors for the tangential components.
+        tangential_basis = self.basis(subdomains, self.nd - 1)
+
+        # To map a scalar to the tangential plane, we need to sum the basis vectors.
+        scalar_to_tangential = pp.ad.sum_projection_list(tangential_basis)
+
+        # Variables: The tangential component of the contact traction and the plastic
+        # displacement jump, and its time increment.
+        t_t: pp.ad.Operator = nd_vec_to_tangential @ self.contact_traction(subdomains)
+        u_t: pp.ad.Operator = nd_vec_to_tangential @ self.plastic_displacement_jump(
+            subdomains
+        )
+
+        # The time increment of the tangential displacement jump.
+        u_t_increment: pp.ad.Operator = (
+            self.tangential_velocity_jump(subdomains=subdomains)
+        )
         
+        # Auxiliary functions.
+        f_max = pp.ad.Function(pp.ad.maximum, "max_function")
+        f_norm = pp.ad.Function(partial(pp.ad.l2_norm, self.nd - 1), "norm_function")
+        f_mask_by_threshold = pp.ad.Function(
+            partial(
+                pp.ad.mask_by_threshold,
+                self.numerical.open_state_tolerance,
+            ),
+            "mask_by_threshold_function",
+        )
+
+        # Augment the traction.
+        c_num = scalar_to_tangential @ self.contact_mechanics_numerical_constant(
+            subdomains
+        )
+        t_t_trial = t_t + c_num  * self.ad_time_step * u_t_increment
+        t_t_trial.set_name("t_t_trial")
+
+        norm_t_t_trial = f_norm(t_t_trial)
+        norm_t_t_trial.set_name("norm_t_t_trial")
+
+        # Friction bound - cut off negative values to avoid open state.
+        zeros_frac = pp.ad.DenseArray(np.zeros(num_cells))
+        b_p = f_max(self.friction_bound(subdomains), zeros_frac)
+
+        # Define the traction to be the linear radial return projection of the augmented
+        # traction. The use of the mask function allows for ignoring cases when the
+        # denominator degenerates.
+        min_term = scalar_to_tangential @ (
+            f_mask_by_threshold(
+                norm_t_t_trial,
+                -f_max(
+                    pp.ad.Scalar(-1.0),
+                    pp.ad.Scalar(-1.0) * b_p / norm_t_t_trial,
+                ),
+            )
+        )
+        equation: pp.ad.Operator = t_t - min_term * t_t_trial
+        equation.set_name("tangential_fracture_deformation_equation")
+
+        return equation
+
 class DynamicMomentumBalanceLinearSpringModel(
     LinearSpringModel, DynamicMomentumBalanceABC
 ):

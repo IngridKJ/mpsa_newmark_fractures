@@ -26,7 +26,7 @@ mpl.rcParams.update(
 # ============================================================
 # PATHS
 # ============================================================
-root_dir = "/workspaces/momentum_balance_inertia/convergence_analysis_results"
+root_dir = "/workdir/mpsa_newmark_fractures/convergence_analysis_results"
 cases = ["CL", "CBB"]
 
 fig_dir = os.path.join(root_dir, "figures/heatmaps_and_lineplots")

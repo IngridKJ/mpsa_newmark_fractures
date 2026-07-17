@@ -1,15 +1,17 @@
 import numpy as np
 import porepy as pp
-import sympy as sym
-from numpy.typing import NDArray
 
-from models_nonlinear_fracture_deformation import ContactModelBartonBandisGapFunction
+from models_nonlinear_fracture_deformation import (
+    ContactModelBartonBandisGapFunction,
+)
 
 # Define a units object to handle unit conversions. Here we use meters as base unit,
 # hence the default length unit is "m" and the conversion will have no practical effect.
 # Nevertheless, it is good practice to use the units framework to ensure consistency.
 units = pp.Units()
 
+# Run-parameters
+COARSE = False
 
 class GeometryBoundaryConditionAndWaveFunction:
     def set_fractures(self) -> None:
@@ -146,6 +148,7 @@ class GeometryBoundaryConditionAndWaveFunction:
         sd_frac_list = self.mdg.subdomains(dim=self.nd - 1)
 
         import os
+
         results_dir = self.results_dir
         os.makedirs(results_dir, exist_ok=True)
 
@@ -213,7 +216,7 @@ class GeometryBoundaryConditionAndWaveFunction:
                 [sd_frac], "contact_traction", "-"
             ).reshape((self.nd, -1), order="F")
             slip_tendency = self.compute_slip_tendency(
-                traction_eval, friction_coefficient, atol=1.0e-7
+                traction_eval, friction_coefficient, atol=1.0e-9
             )
 
             # File paths for this fracture
@@ -234,12 +237,11 @@ class GeometryBoundaryConditionAndWaveFunction:
                 with open(file, "a") as f:
                     f.write(
                         np.array2string(
-                            arr,
-                            threshold=np.inf,
-                            max_line_width=np.inf,
-                            separator=", "
-                        ) + ",\n"
+                            arr, threshold=np.inf, max_line_width=np.inf, separator=", "
+                        )
+                        + ",\n"
                     )
+
             write_array(displacement_jump_file_n, displacement_jump_n)
             write_array(displacement_jump_file_t, displacement_jump_t)
             write_array(traction_file_n, traction_n)
@@ -254,10 +256,11 @@ class GeometryBoundaryConditionAndWaveFunction:
                             sd_frac.cell_centers[i, :],
                             threshold=np.inf,
                             max_line_width=np.inf,
-                            separator=", "
+                            separator=", ",
                         )
                         f.write(line + ",\n")
         return data
+
 
 class CBB(
     GeometryBoundaryConditionAndWaveFunction,
@@ -302,19 +305,24 @@ params = {
     "folder_name": "simulation_example_symmetric_fractures_2d",
     "grid_type": "simplex",
     "meshing_arguments": {
-        "cell_size_fracture": 0.1e-3,
-        "cell_size_boundary": 0.5e-3,
+        "cell_size_fracture": 0.25e-3 if COARSE else 0.1e-3,
+        "cell_size_boundary": 0.75e-3 if COARSE else 0.5e-3,
         "background_transition_multiplier": 50.0,
     },
     "material_constants": {"solid": solid},
     "wave_amplitude": A,
     "wave_frequency": wave_frequency,
     "solver_statistics_file_name": "solver_statistics.json",
+    "linear_solver": {
+        # "options": 
+        #     {"gmres": {
+        #         "ksp_monitor": None,
+        #     }},
+    },
 }
 
 model = CBB(params)
 model.results_dir = "simulation_example_results_2d"
-model.file_suffix = "fine"
 other_params = {
     "progressbars": True,
     "nl_max_iterations": 30,

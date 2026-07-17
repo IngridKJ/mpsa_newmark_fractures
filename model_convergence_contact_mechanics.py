@@ -1,10 +1,20 @@
+"""This file contains the model setup for the contact mechanics fracture deformation
+self-convergence analyses. All initial conditions, boundary conditions, geometry and so
+on is set. The model is used in runscript_convergence_frictional_contact_mechanics.py.
+
+"""
+
 import numpy as np
 import porepy as pp
+
+import os
 
 from models_nonlinear_fracture_deformation import (
     ContactModelBartonBandisGapFunction,
     ContactModelLinearGapFunction,
 )
+
+from pp_solvers import IterativeSolverMixin
 
 
 class GeometryBoundaryConditionAndWaveFunction:
@@ -33,7 +43,9 @@ class GeometryBoundaryConditionAndWaveFunction:
             points: An array with the line endpoint coordinates ([[x0, x1], [y0, y1]]).
             theta: rotation angle in radians.
 
-        Returns: 2x2 array of rotated + translated line
+        Returns:
+            2x2 array of rotated + translated line.
+
         """
         # Original midpoint
         M_orig = np.mean(points, axis=1, keepdims=True)
@@ -122,7 +134,18 @@ class GeometryBoundaryConditionAndWaveFunction:
         return pp.ad.Scalar(stiffness, "fracture_tangential_stiffness")
 
     def data_to_export(self):
-        """"""
+        """Save reference fracture quantities to text files for plotting and analysis.
+
+        Only the values for the reference model are saved.
+
+        The following quantities are saved:
+            * Displacement jump (normal and tangential)
+            * Contact traction (normal and tangential, both non-dimensional and in Pa)
+            * Fracture opening
+            * Slip tendency
+            * Fracture cell centers (only once, at the first time step)
+
+        """
         data = super().data_to_export()
         # Export to .txt files for the reference model
         if self.params["reference_flag"]:
@@ -145,7 +168,7 @@ class GeometryBoundaryConditionAndWaveFunction:
                 (self.nd, sd_frac.num_cells), order="F"
             )
 
-            # Traction
+            # Traction: non-dimensional and Pa
             traction = self.contact_traction([sd_frac])
 
             traction_n_nondim = self.equation_system.evaluate(
@@ -176,10 +199,8 @@ class GeometryBoundaryConditionAndWaveFunction:
                 [sd_frac], "contact_traction", "-"
             ).reshape((self.nd, -1), order="F")
             slip_tendency = self.compute_slip_tendency(
-                traction, friction_coefficient, atol=5.0e-7
+                traction, friction_coefficient, atol=1.0e-9
             )
-
-            import os
 
             results_dir = "convergence_analysis_results"
             model_tag = self.params["model_tag"]
@@ -230,12 +251,24 @@ class GeometryBoundaryConditionAndWaveFunction:
 
 
 class SelfConvergenceCBB(
-    GeometryBoundaryConditionAndWaveFunction, ContactModelBartonBandisGapFunction
+    IterativeSolverMixin,
+    GeometryBoundaryConditionAndWaveFunction,
+    ContactModelBartonBandisGapFunction,
 ):
-    """Model setup for the self convergence analysis: Barton-Bandis gap function."""
+    """Model setup for the self convergence analysis: Barton-Bandis gap function.
+
+    Radial return contact formulation.
+
+    """
 
 
 class SelfConvergenceCL(
-    GeometryBoundaryConditionAndWaveFunction, ContactModelLinearGapFunction
+    IterativeSolverMixin,
+    GeometryBoundaryConditionAndWaveFunction,
+    ContactModelLinearGapFunction,
 ):
-    """Model setup for the self convergence analysis: Linear gap function."""
+    """Model setup for the self convergence analysis: Linear gap function.
+
+    Radial return contact formulation.
+
+    """

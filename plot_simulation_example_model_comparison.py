@@ -7,8 +7,8 @@ import matplotlib.ticker as mticker
 # ============================================================
 # STYLE
 # ============================================================
-FONT_SIZE_2 = 21
-FONT_SIZE_3 = 22
+FONT_SIZE_2 = 23
+FONT_SIZE_3 = 23
 
 mpl.rcParams.update(
     {
@@ -26,10 +26,17 @@ mpl.rcParams.update(
 # ============================================================
 # PATHS
 # ============================================================
-root_dir = "/workspaces/momentum_balance_inertia/convergence_analysis_results"
-cases = ["CL", "CBB"]
+root_dir = (
+    "/workspaces/momentum_balance_inertia/simulation_example_results_compare_models"
+)
 
-fig_dir = os.path.join(root_dir, "figures/heatmaps_and_lineplots")
+cases_SL_SBB_CL_CBB = ["S_Lin_Lin", "S_Lin_BB", "C_Coul_Lin", "C_Coul_BB"]
+
+all_cases = [
+    cases_SL_SBB_CL_CBB,
+]
+
+fig_dir = os.path.join(root_dir, "figures/heatmaps")
 os.makedirs(fig_dir, exist_ok=True)
 
 
@@ -54,15 +61,10 @@ def load_data(filepath):
 
 
 # ============================================================
-# LOAD ALL (ONLY CHANGE: SLIP COMPUTATION)
+# LOAD ALL
 # ============================================================
 def load_all():
     data = {}
-
-    # Tolerance for undefined normal traction. Chosen upon inspection of the traction
-    # values.
-    atol = 1.0e-9
-
     for case in cases:
         base = os.path.join(root_dir, case)
 
@@ -73,29 +75,10 @@ def load_all():
         normal = load_data(os.path.join(base, "displacement_jump_n.txt"))
 
         # ========================================================
-        # FRACTURE OPENING (NEW - like reference script)
-        # ========================================================
-        opening = load_data(os.path.join(base, "fracture_opening.txt"))
-
-        # ========================================================
         # TRACTIONS IN PA
         # ========================================================
         tau_t = load_data(os.path.join(base, "traction_t.txt"))
         tau_n = load_data(os.path.join(base, "traction_n.txt"))
-
-        # ========================================================
-        # TRACTIONS NONDIM
-        # ========================================================
-        tau_t_nondim = load_data(os.path.join(base, "traction_t_nondim.txt"))
-        tau_n_nondim = load_data(os.path.join(base, "traction_n_nondim.txt"))
-
-        # ========================================================
-        # SLIP TENDENCY (ABS ratio + tolerance)
-        # ========================================================
-        slip = np.full_like(tau_t_nondim, np.nan)
-
-        valid = ~np.isclose(tau_n_nondim, 0.0, atol=atol)
-        slip[valid] = np.abs(tau_t_nondim[valid]) / np.abs(tau_n_nondim[valid])
 
         # ========================================================
         # STORE
@@ -103,10 +86,8 @@ def load_all():
         data[case] = {
             "tangential": tangential,
             "normal": normal,
-            "opening": opening,
             "traction_t": tau_t,
             "traction_n": tau_n,
-            "slip": slip,
         }
 
     return data
@@ -118,7 +99,7 @@ def load_all():
 def build_axes(shape):
     n_time, n_space = shape
 
-    final_time = 1.0e-5 * (140 / 160)
+    final_time = 1.0390625e-05
     time = np.linspace(0, final_time, n_time)
 
     L = 0.016
@@ -131,7 +112,7 @@ def build_axes(shape):
 # LIMITS
 # ============================================================
 def compute_limits(data, key):
-    all_vals = np.concatenate([data["CL"][key].ravel(), data["CBB"][key].ravel()])
+    all_vals = np.concatenate([entry[key].ravel() for entry in data.values()])
     return np.nanmin(all_vals), np.nanmax(all_vals)
 
 
@@ -139,9 +120,8 @@ def compute_limits(data, key):
 # CONTOURS
 # ============================================================
 N_CONTOURS = {
-    "tangential": 7,
-    "normal": 7,
-    "slip": 7,
+    "tangential": 10,
+    "normal": 10,
 }
 
 
@@ -156,11 +136,9 @@ def make_levels(vmin, vmax, n_levels):
 # PLOT
 # ============================================================
 def plot_all(data):
-
     limits = {
         "tangential": compute_limits(data, "tangential"),
         "normal": compute_limits(data, "normal"),
-        "slip": compute_limits(data, "slip"),
     }
 
     contour_levels = {
@@ -175,13 +153,12 @@ def plot_all(data):
 
     fields = [
         ("Tangential jump", "tangential", r"$[\![u]\!]_\tau$", True),
-        ("Slip tendency", "slip", r"$s$", False),
         ("Normal jump", "normal", r"$[\![u]\!]_n$", True),
     ]
 
     for title, key, cbar_label, use_contours in fields:
         fig, subfigs = plt.subplots(
-            1, 2, figsize=(14, 6), layout="constrained"
+            1, len(cases), figsize=(20, 6), layout="constrained"
         )
 
         ims = []
@@ -241,7 +218,7 @@ def plot_all(data):
                         levels=neg_levels,
                         colors="paleturquoise",
                         linewidths=2.5,
-                        alpha=0.5
+                        alpha=0.5,
                     )
 
                 if len(pos_levels) > 0:
@@ -252,7 +229,7 @@ def plot_all(data):
                         levels=pos_levels,
                         colors="lightcoral",
                         linewidths=2.5,
-                        alpha=0.5
+                        alpha=0.5,
                     )
 
                 if 0.0 in levels:
@@ -268,93 +245,117 @@ def plot_all(data):
         cbar = fig.colorbar(ims[-1], ax=subfigs, location="right", shrink=0.9, pad=0.01)
         cbar.set_label(cbar_label, fontsize=FONT_SIZE_3)
 
-        out = os.path.join(fig_dir, f"{key}_CL_vs_CBB.png")
+        out = os.path.join(fig_dir, f"{key}_{str(cases)}.png")
         plt.savefig(out, dpi=300, bbox_inches="tight")
         plt.close()
 
         print("Saved:", out)
 
+# ============================================================
+# TRACTION RATIO |tau_t / tau_n| FOR COULOMB MODELS
+# ============================================================
+def plot_traction_ratio(data):
+    coulomb_cases = [case for case in cases_SL_SBB_CL_CBB if case.startswith("C")]
 
-def plot_line_last_timestep(data, case="CL"):
-    base = data[case]
+    fig, subfigs = plt.subplots(
+        1,
+        len(coulomb_cases) + 2,
+        figsize=(20, 6),
+        layout="constrained",
+    )
 
-    # ========================================================
-    # LAST TIMESTEP (same as reference script)
-    # ========================================================
-    opening = base["opening"][-1]
-    slip = base["slip"][-1]
-    tau_t = base["traction_t"][-1]
-    tau_n = base["traction_n"][-1]
+    # Keep subfigures 1 and 2 completely empty
+    subfigs[0].axis("off")
+    subfigs[1].axis("off")
 
-    # ========================================================
-    # SAFE: use opening to find mesh size
-    # ========================================================
-    n = len(opening)
+    if len(coulomb_cases) == 1:
+        subfigs = [subfigs]
 
-    opening = opening[:n]
-    slip = slip[:n]
-    tau_t = tau_t[:n]
-    tau_n = tau_n[:n]
+    ratios = {}
 
-    fracture_length = 0.016
-    x = np.linspace(0, fracture_length, n)[::-1]
+    # --------------------------------------------------------
+    # Compute absolute ratios safely
+    # --------------------------------------------------------
+    atol = 1.0e-9
 
-    # ========================================================
-    # PLOT
-    # ========================================================
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+    for case in coulomb_cases:
+        tau_t = data[case]["traction_t"]
+        tau_n = data[case]["traction_n"]
 
-    # ===== TOP (exact reference structure) =====
-    ax1.set_ylabel("Fracture opening [m]", color="black")
-    ax1.set_ylim(
-        -np.nanmax(opening) * 0.02, np.nanmax(opening) * 1.3
-    ) 
-    ax1_right = ax1.twinx()
-    ax1_right.set_ylim(-np.nanmax(slip) * 0.018, np.nanmax(slip) * 1.6)
-    ax1_right.set_ylabel("Slip Tendency", color="black")
+        ratio = np.full_like(tau_t, np.nan)
 
-    line1 = ax1.plot(x, opening, "k-", linewidth=3.0, label="Fracture opening")
-    line2 = ax1_right.plot(x, slip, "darkgray", linewidth=3.0, label="Slip tendency")
+        valid = ~np.isclose(tau_n, 0.0, atol=atol)
+        ratio[valid] = np.abs(tau_t[valid] / tau_n[valid])
 
-    ax1.tick_params(axis="x", labelbottom=False)
+        ratios[case] = ratio
 
-    lines = line1 + line2
-    labels = [l.get_label() for l in lines]
-    ax1.legend(lines, labels, loc="upper right")
-    ax1.grid(True, alpha=0.3)
+    cmap = mpl.colormaps["viridis"].copy()
+    cmap.set_bad("white")
 
-    # ===== BOTTOM =====
-    ax2.set_xlabel("Position along fracture [m]")
-    ax2.set_ylabel("Contact traction [Pa]")
-    ax2.set_ylim(
-        -1.0e7, 2.75e7
-    ) 
-    ax2.plot(x, tau_t, "g-", linewidth=3.0, label="Tangential traction")
-    ax2.plot(x, tau_n, "k--", linewidth=3.0, label="Friction bound (positive)")
-    ax2.plot(x, -tau_n, "k-.", linewidth=3.0, label="Friction bound (negative)")
+    ims = []
 
-    ax2.axhline(0, color="black", linewidth=0.5, alpha=0.5)
-    ax2.legend(loc="upper right")
-    ax2.grid(True, alpha=0.3)
+    # --------------------------------------------------------
+    # Plot
+    # --------------------------------------------------------
+    for i, case in enumerate(coulomb_cases):
 
-    ax1.set_xlim(0, fracture_length)
-    ax2.set_xlim(0, fracture_length)
+        ratio = ratios[case]
 
-    plt.tight_layout()
+        t_axis, x_axis = build_axes(ratio.shape)
 
-    out = os.path.join(fig_dir, f"line_plots_{case}.png")
-    plt.savefig(out, dpi=300, bbox_inches="tight")
+        ax = subfigs[i + 2]
+
+        im = ax.pcolormesh(
+            x_axis,
+            t_axis,
+            ratio,
+            cmap=cmap,
+            shading="auto",
+        )
+
+        ims.append(im)
+
+        # ax.set_title(case)
+        ax.set_xlabel("Position along fracture [m]")
+        ax.set_ylabel("Time [s]")
+        ax.xaxis.set_major_formatter(
+            mticker.FormatStrFormatter("%.3f")
+        )
+
+    cbar = fig.colorbar(
+        ims[-1],
+        ax=subfigs,
+        location="right",
+        shrink=0.9,
+        pad=0.045,
+    )
+
+    cbar.set_label(
+        r"$s$",
+        fontsize=FONT_SIZE_3 + 4,
+    )
+
+    out = os.path.join(
+        fig_dir,
+        "slip_tendency_model_comparison.png",
+    )
+
+    plt.savefig(
+        out,
+        dpi=300,
+        bbox_inches="tight",
+    )
+
     plt.close()
 
     print("Saved:", out)
-
 
 # ============================================================
 # RUN
 # ============================================================
 if __name__ == "__main__":
-    data = load_all()
-    plot_all(data)
+    for cases in all_cases:
+        data = load_all()
+        plot_all(data)
 
-    for case in cases:
-        plot_line_last_timestep(data, case)
+    plot_traction_ratio(data)

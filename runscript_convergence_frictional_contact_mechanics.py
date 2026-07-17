@@ -4,7 +4,10 @@ import porepy as pp
 import numpy as np
 import os
 
-from model_convergence_contact_mechanics import SelfConvergenceCBB, SelfConvergenceCL
+from model_convergence_contact_mechanics import (
+    SelfConvergenceCBB,
+    SelfConvergenceCL,
+)
 from convergence_metrics import (
     matrix_overlap_l2_components_p1,
     fracture_overlap_l2_components_p1,
@@ -19,18 +22,39 @@ from utils.convergence_analysis import (
     load_errors,
 )
 
-
-# Configuration
-MODEL_TAGS = {"CL": SelfConvergenceCL, "CBB": SelfConvergenceCBB}
-COEFFS = [0, 1, 2, 3, 4]
-RESULTS_DIR = "convergence_analysis_results"
-FIGURES_DIR = os.path.join(RESULTS_DIR, "figures")
+# Run-parameters
 RUN_MODELS = True
-# Create directories
-for tag in MODEL_TAGS:
-    os.makedirs(os.path.join(RESULTS_DIR, f"{tag}"), exist_ok=True)
+COARSE = True
 
+# Refinement coefficients for the convergence analysis
+COEFFS = [0, 1, 2] if COARSE else [0, 1, 2, 3, 4]
+
+# Base directory (project root = where this script lives)
+SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# Top-level results folder
+MAIN_RESULTS_DIR = os.path.join(SCRIPT_PATH, "convergence_analysis_results")
+
+# Figures
+FIGURES_DIR = os.path.join(MAIN_RESULTS_DIR, "figures")
+
+# Ensure directories exist
+os.makedirs(MAIN_RESULTS_DIR, exist_ok=True)
 os.makedirs(FIGURES_DIR, exist_ok=True)
+
+# Configurations and create directories for each one:
+MODEL_TAGS = {
+    "CL": SelfConvergenceCL,
+    "CBB": SelfConvergenceCBB,
+}
+
+for tag in MODEL_TAGS:
+    os.makedirs(os.path.join(MAIN_RESULTS_DIR, f"{tag}"), exist_ok=True)
+
+# File names and file paths
+FILENAME_ROCK = "errors.txt"
+FILENAME_FRACTURE = "errors_fracture.txt"
+
 
 # Model parameters
 MATERIAL_CONSTANTS = {
@@ -79,6 +103,12 @@ def make_parameter_dictionary(
         "wave_amplitude": 5.0e-5,
         "wave_frequency": 100.0e3,
         "solver_statistics_file_name": "solver_statistics.json",
+        "linear_solver": {
+            # "options": 
+            #     {"gmres": {
+            #         "ksp_monitor": None,
+            #     }},
+        },
     }
     return params, SOLVER_PARAMS
 
@@ -91,8 +121,7 @@ def run_model(
 
     # Clear old output files for this run
     if reference_flag:
-        results_dir = RESULTS_DIR
-        model_dir = os.path.join(results_dir, model_tag)
+        MODEL_RESULTS_DIR = os.path.join(MAIN_RESULTS_DIR, model_tag)
         for filename in [
             "displacement_jump_n.txt",
             "displacement_jump_t.txt",
@@ -106,9 +135,9 @@ def run_model(
             "errors.txt",
             "errors_fracture.txt",
         ]:
-            filepath = os.path.join(model_dir, filename)
-            if os.path.exists(filepath):
-                os.remove(filepath)
+            FILEPATH = os.path.join(MODEL_RESULTS_DIR, filename)
+            if os.path.exists(FILEPATH):
+                os.remove(FILEPATH)
 
     model = model_class(params=params)
     pp.ModelRunner(model, run_params).run()
@@ -174,19 +203,21 @@ def run_convergence_analysis(
         time_steps = np.asarray(time_steps)
 
         save_errors(
-            RESULTS_DIR,
+            MAIN_RESULTS_DIR,
             model_tag,
             cells["matrix"],
             cells["fracture"],
             time_steps,
             errors,
         )
-        print(f"\nError files saved to {os.path.join(RESULTS_DIR, f'{model_tag}')}")
+        print(
+            f"\nError files saved to {os.path.join(MAIN_RESULTS_DIR, f'{model_tag}')}"
+        )
     else:
         print("Loading saved convergence data (no simulation run)...")
 
         cells_matrix, cells_frac, time_steps, errors = load_errors(
-            RESULTS_DIR, model_tag
+            MAIN_RESULTS_DIR, model_tag
         )
         cells_times = {
             "matrix": cells_matrix * time_steps,
@@ -196,7 +227,7 @@ def run_convergence_analysis(
     x_matrix = np.asarray(cells_times["matrix"]) ** (1 / 3)
     x_fracture = np.asarray(cells_times["fracture"]) ** (1 / 2)
     plot_convergence(
-        RESULTS_DIR,
+        MAIN_RESULTS_DIR,
         model_tag,
         x_matrix,
         x_fracture,

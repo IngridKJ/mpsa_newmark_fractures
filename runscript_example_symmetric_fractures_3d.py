@@ -1,13 +1,20 @@
 import numpy as np
 import porepy as pp
-import sympy as sym
+
 from numpy.typing import NDArray
-from models_nonlinear_fracture_deformation import ContactModelBartonBandisGapFunction
+from models_nonlinear_fracture_deformation import (
+    ContactModelBartonBandisGapFunction,
+)
+
+import os
+
 import logging
- 
+
 logger = logging.getLogger(__name__)
- 
 logging.basicConfig(level=logging.INFO)
+
+# Run-parameters
+COARSE = False
 
 class GeometryBoundaryConditionAndWaveFunction:
     def fracture_network_2d(self) -> None:
@@ -211,7 +218,7 @@ class GeometryBoundaryConditionAndWaveFunction:
         cell_offsets = np.cumsum([0] + [sd.num_cells for sd in sds])
         apertures = self.evaluate_and_scale(sds, "aperture", "m")
         slip_tendency = self.compute_slip_tendency(
-            traction, friction_coefficient, atol=1.0e-7
+            traction, friction_coefficient, atol=1.0e-9
         )
 
         # Loop over the fracture subdomains.
@@ -245,6 +252,52 @@ class GeometryBoundaryConditionAndWaveFunction:
                     apertures[cell_offsets[id] : cell_offsets[id + 1]],
                 )
             )
+
+        sd_frac_list = self.mdg.subdomains(dim=self.nd - 1)
+        results_dir = self.results_dir
+        os.makedirs(results_dir, exist_ok=True)
+
+        # Clear old files at the start of simulation (time_index == 0, first fracture)
+        if self.time_manager.time_index == 0:
+            for frac_idx in range(len(sd_frac_list)):
+                fracture_dir = os.path.join(results_dir, f"fracture_{frac_idx}")
+                os.makedirs(fracture_dir, exist_ok=True)
+                for filename in [
+                    "displacement_jump_n.txt",
+                ]:
+                    filepath = os.path.join(fracture_dir, filename)
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+
+        # Loop over all fractures
+        for frac_idx, sd_frac in enumerate(sd_frac_list):
+            # Create subdirectory for this fracture
+            fracture_dir = os.path.join(results_dir, f"fracture_{frac_idx}")
+            os.makedirs(fracture_dir, exist_ok=True)
+
+            nd_vec_to_normal = self.normal_component([sd_frac])
+
+            # Displacement jump
+            displacement_jump = self.displacement_jump([sd_frac])
+            displacement_jump_n = self.equation_system.evaluate(
+                nd_vec_to_normal @ displacement_jump
+            )
+
+            # File paths for this fracture
+            displacement_jump_file_n = os.path.join(
+                fracture_dir, "displacement_jump_n.txt"
+            )
+            # Append data at each timestep
+            def write_array(file, arr):
+                with open(file, "a") as f:
+                    f.write(
+                        np.array2string(
+                            arr, threshold=np.inf, max_line_width=np.inf, separator=", "
+                        )
+                        + ",\n"
+                    )
+
+            write_array(displacement_jump_file_n, displacement_jump_n)
         return data
 
 
@@ -291,18 +344,24 @@ params = {
     "folder_name": "simulation_example_symmetric_fractures_3d",
     "grid_type": "simplex",
     "meshing_arguments": {
-        "cell_size_fracture": 0.5e-3,
-        "cell_size_boundary": 1.0e-3,
+        "cell_size_fracture": 2.0e-3 if COARSE else 0.5e-3,
+        "cell_size_boundary": 2.5e-3 if COARSE else 1.0e-3,
         "background_transition_multiplier": 20.0,
     },
     "material_constants": {"solid": solid},
     "wave_amplitude": A,
     "wave_frequency": wave_frequency,
     "solver_statistics_file_name": "solver_statistics.json",
+    "linear_solver": {
+        # "options": 
+        #     {"gmres": {
+        #         "ksp_monitor": None,
+        #     }},
+    },
 }
 
 model = CBB(params)
-model.file_suffix = "test"
+model.results_dir = "simulation_example_results_3d"
 other_params = {
     "progressbars": True,
     "nl_max_iterations": 30,

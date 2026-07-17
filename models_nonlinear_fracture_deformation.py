@@ -1,4 +1,4 @@
-"""This file contains model setups for nonlinear fracture deformation with set boundary
+"""This file contains model setups for fracture deformation with set boundary
 conditions, initial conditions, and so on. The setups are used for both convergence
 analyses and for simulation examples.
 
@@ -6,17 +6,21 @@ The models are used for convergence analysis:
 * SpringTypeBartonBandisConvergenceSetup:
     Barton-Bandis spring type deformation model (convergence of transmission
     coefficient)
+* SpringTypeBartonBandis:
+    Barton-Bandis spring type deformation model (used in model comparison example)
+* SpringTypeLinear:
+    Linear spring type deformation model (used in model comparison example)
 * ContactModelBartonBandisGapFunction
     Fracture contact mechanics with Barton-Bandis elastic normal deformation (self
-    convergence)
+    convergence). Radial return contact formulation.
 * ContactModelLinearGapFunction
-    Fracture contact mechanics with linear elastic normal deformation (self convergence)
+    Fracture contact mechanics with linear elastic normal deformation (self
+    convergence). Radial return contact formulation.
 
-The ContactModelBartonBandisGapFunction model is used in simulation example settings:
-* Four fractures, where two of them are intersecting, in a heterogeneous medium
-    (runscript_example_intersecting_fractures.py)
+The ContactModelBartonBandisGapFunction model is also used in a simulation
+example setting:
 * Geometrically symmetric fracture network, but different Barton-Bandis parameters for
-    the different fractures (runscript_example_symmetric_fractures.py and
+    the different fractures (runscript_example_symmetric_fractures_2d.py and
     runscript_example_symmetric_fractures_3d.py
 
 """
@@ -25,9 +29,13 @@ import numpy as np
 import porepy as pp
 import sympy as sym
 
-from models import (DynamicMomentumBalanceABCNonlinear,
-                    DynamicMomentumBalanceBartonBandisSpringModel)
+from models import (
+    DynamicMomentumBalanceRadialReturn,
+    DynamicMomentumBalanceBartonBandisSpringModel,
+    DynamicMomentumBalanceLinearSpringModel,
+)
 
+from pp_solvers import IterativeSolverMixin
 
 class TheoreticalConstants:
     @property
@@ -290,6 +298,7 @@ class MethodsForBartonBandisConvergenceSetup:
         * Method for computing the theoretical transmission coefficient and its error.
 
     """
+
     def bc_values_displacement(self, bg: pp.BoundaryGrid) -> np.ndarray:
         """Method for setting Dirichlet boundary values.
 
@@ -316,7 +325,7 @@ class MethodsForBartonBandisConvergenceSetup:
                 xmin, t
             )
         return values.ravel("F")
-    
+
     # Geometry and domain
     def set_fractures(self) -> None:
         """Setting fractures."""
@@ -348,7 +357,6 @@ class MethodsForBartonBandisConvergenceSetup:
         u_left = A_0 * (sym.sin(omega * t)) ** 4
         u_left_func = sym.lambdify((x, t), u_left, "numpy")
         return [u_left_func, 0]
-
 
     # Data exportation and theoretical transmission coefficient computation
     def data_to_export(self):
@@ -391,7 +399,7 @@ class MethodsForBartonBandisConvergenceSetup:
                     f"{num_cells}, {self.time_manager.time_index}, {relative_error_T}\n"
                 )
         return data
-    
+
     def compute_theoretical_T(self):
         """The theoretical transmission coefficient for a Barton-Bandis fracture.
 
@@ -457,7 +465,6 @@ class MethodsForBartonBandisConvergenceSetup:
         return np.max(v), T_non
 
 
-
 class CommonMixins(
     TheoreticalConstants,
     BoundaryConditions,
@@ -467,6 +474,7 @@ class CommonMixins(
 
 
 class SpringTypeBartonBandisConvergenceSetup(
+    IterativeSolverMixin,
     MethodsForBartonBandisConvergenceSetup,
     CommonMixins,
     DynamicMomentumBalanceBartonBandisSpringModel,
@@ -480,6 +488,7 @@ class SpringTypeBartonBandisConvergenceSetup(
 
 
 class SpringTypeBartonBandis(
+    IterativeSolverMixin,
     CommonMixins,
     DynamicMomentumBalanceBartonBandisSpringModel,
 ):
@@ -490,10 +499,22 @@ class SpringTypeBartonBandis(
 
     """
 
+class SpringTypeLinear(
+    IterativeSolverMixin,
+    CommonMixins,
+    DynamicMomentumBalanceLinearSpringModel,
+):
+    """Dynamic momentum balance with spring type fracture deformation: Linear.
+
+    This model implements the Linear model for elastic normal fracture deformation.
+
+    """
+
 
 class ContactModelBartonBandisGapFunction(
+    IterativeSolverMixin,
     CommonMixins,
-    DynamicMomentumBalanceABCNonlinear,
+    DynamicMomentumBalanceRadialReturn,
 ):
     """Dynamic momentum balance with fracture contact mechanics, Barton-Bandis version.
 
@@ -547,8 +568,9 @@ class ContactModelBartonBandisGapFunction(
 
 
 class ContactModelLinearGapFunction(
+    IterativeSolverMixin,
     CommonMixins,
-    DynamicMomentumBalanceABCNonlinear,
+    DynamicMomentumBalanceRadialReturn,
 ):
     """Dynamic momentum balance with fracture contact mechanics, linear gap version.
 

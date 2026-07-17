@@ -16,39 +16,55 @@ from model_convergence_linear_spring import SpringTypeLinearConvergenceSetup
 
 logger = logging.getLogger(__name__)
 
+# Run-parameters
+RUN_MODEL = True
+COARSE = True
+
+# Base directory (project root = where this script lives)
+SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
+
+# Top-level results folder
+MAIN_RESULTS_DIR = os.path.join(SCRIPT_PATH, "convergence_analysis_results")
+
+# Figures
+FIGURES_DIR = os.path.join(MAIN_RESULTS_DIR, "figures")
+
+# Ensure directory exist
+os.makedirs(FIGURES_DIR, exist_ok=True)
+
+# File names and file paths
+FILENAME_ROCK = f"errors.txt"
+FILENAME_FRACTURE = f"errors_fracture.txt"
+FIGURE_PATH = os.path.join(FIGURES_DIR, "convergence_linear_spring_model.png")
+            
+# Error file header
+header = "num_cells, num_time_steps, displacement_error, traction_error\n"
+
 for setup_type in ["shear", "compressive"]:
-    # Prepare path for generated output files
-    folder_name_parent = "convergence_analysis_results/"
-    folder_name_results = "SL_" + setup_type
-    folder_name = folder_name_parent + folder_name_results
+    SETUP_FOLDER = f"SL_{setup_type}"
+    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, SETUP_FOLDER)
 
-    header = "num_cells, num_time_steps, displacement_error, traction_error\n"
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, folder_name)
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Set fracture stiffness, maximum time step and maximum cell size
-    ks = [
-        (2.0e11, "2.0e11"),
-    ]
+    RESULTS_FILE_PATH_ROCK = os.path.join(OUTPUT_DIR, FILENAME_ROCK)
+    RESULTS_FILE_PATH_FRACTURE = os.path.join(OUTPUT_DIR, FILENAME_FRACTURE)
+
+    # Set fracture stiffness, wave amplitude, maximum time step and maximum cell size
+    A = 5.0e-5
+    fracture_stiffness = 2.0e11
     final_time = 2.0e-5
     dt_max = final_time / 20
     cs_max = 1.0e-3
 
-    for k in ks:
-        filename = f"errors.txt"
-        filename = os.path.join(output_dir, filename)
-        filename_fracture = f"errors_fracture.txt"
-        filename_fracture = os.path.join(output_dir, filename_fracture)
-
-        refinements = np.arange(0, 4)
-        for refinement_coefficient in refinements:
-            if refinement_coefficient == 0:
-                with open(filename, "w") as file:
+    if RUN_MODEL:
+        refinement_coefficients = np.arange(0, 2) if COARSE else np.arange(0, 4)
+        for coeff in refinement_coefficients:
+            if coeff == 0:
+                with open(RESULTS_FILE_PATH_ROCK, "w") as file:
                     file.write(header)
-                with open(filename_fracture, "w") as file:
+                with open(RESULTS_FILE_PATH_FRACTURE, "w") as file:
                     file.write(header)
-            dt = dt_max / 2**refinement_coefficient
+            dt = dt_max / 2**coeff
 
             time_manager = pp.TimeManager(
                 schedule=[0.0, final_time],
@@ -63,8 +79,6 @@ for setup_type in ["shear", "compressive"]:
             lmbda_generic_rock = 4.0e9
             mu_generic_rock = 4.0e9
             rho_generic_rock = 2600.0
-
-            fracture_stiffness = k[0]
 
             solid_vals = {
                 "fracture_gap": 0.0,
@@ -88,11 +102,12 @@ for setup_type in ["shear", "compressive"]:
             }
 
             # Include the time_manager to the model params dictionary
-            folder_name = f"spring_{setup_type}_refinement_{refinement_coefficient}"
             params = {
                 "time_manager": time_manager,
-                "meshing_arguments": {"cell_size": cs_max / 2**refinement_coefficient},
-                "folder_name": folder_name,
+                "meshing_arguments": {
+                    "cell_size": cs_max / 2**coeff
+                },
+                "folder_name": f"visualization_spring_{setup_type}_ref_{coeff}",
                 "grid_type": "simplex",
                 "material_constants": {"solid": solid},
                 "discontinuity_location": 25.0e-3,
@@ -100,13 +115,19 @@ for setup_type in ["shear", "compressive"]:
                 "compressive_setup": setup_type == "compressive",
                 "heterogeneity_type": "simple",
                 "solid_values_inner_region": solid_values_inner_region,
-                "wave_amplitude": 5.0e-5,
+                "wave_amplitude": A,
                 "times_to_export": [final_time],
+                "linear_solver": {
+                    # "options": 
+                    #     {"gmres": {
+                    #         "ksp_monitor": None,
+                    #     }},
+                },
             }
 
             model = SpringTypeLinearConvergenceSetup(params)
-            model.filename_path = filename
-            model.filename_path_fracture = filename_fracture
+            model.filename_path = RESULTS_FILE_PATH_ROCK
+            model.filename_path_fracture = RESULTS_FILE_PATH_FRACTURE
             other_params = {"progressbars": True, "max_iterations": 50}
 
             runner = pp.ModelRunner(model=model, params=other_params)
@@ -116,35 +137,19 @@ for setup_type in ["shear", "compressive"]:
 import matplotlib.pyplot as plt
 from plotting.plot_utils import draw_multiple_loglog_slopes
 
-# Set font to DejaVu Serif (serif font available on Linux)
-plt.rcParams["font.family"] = "serif"
-plt.rcParams["font.serif"] = ["DejaVu Serif", "Times New Roman", "Times"]
-plt.rcParams["mathtext.fontset"] = "dejavuserif"
-
-# Create figures directory
-script_dir = os.path.dirname(os.path.abspath(__file__))
-figures_dir = os.path.join(script_dir, "convergence_analysis_results", "figures")
-os.makedirs(figures_dir, exist_ok=True)
-
-# Setup configurations
 setups = ["compressive", "shear"]
 ks = [(2.0e11, "2.0e11")]
 
-# Prepare data for all configurations
 all_data = {}
 
 for setup_type in setups:
-    folder_name_parent = "convergence_analysis_results/"
-    folder_name = folder_name_parent + folder_name_results
-    output_dir = os.path.join(script_dir, folder_name)
+    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, f"SL_{setup_type}")
 
     for k_val, k_str in ks:
-        # Read bulk error data
-        filename_bulk = os.path.join(output_dir, f"errors.txt")
-        data_bulk = np.loadtxt(filename_bulk, delimiter=",", skiprows=1)
+        filename_bulk = os.path.join(OUTPUT_DIR, "errors.txt")
+        filename_frac = os.path.join(OUTPUT_DIR, "errors_fracture.txt")
 
-        # Read fracture error data
-        filename_frac = os.path.join(output_dir, f"errors_fracture.txt")
+        data_bulk = np.loadtxt(filename_bulk, delimiter=",", skiprows=1)
         data_frac = np.loadtxt(filename_frac, delimiter=",", skiprows=1)
 
         if data_bulk.ndim == 1:
@@ -156,7 +161,7 @@ for setup_type in setups:
         all_data[f"{setup_type}_frac"] = data_frac
 
 # Create figure with subplots (2x2: shear rock, shear frac, comp rock, comp frac)
-fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+fig, axes = plt.subplots(2, 2, figsize=(18, 10))
 
 # Order: comp rock, comp frac, shear rock, shear frac
 configurations = [
@@ -209,30 +214,30 @@ for setup_type, region, ax, title in configurations:
 
     ax.set_title(title, fontsize=22, fontweight="bold")
     ax.grid(True, which="both", alpha=0.3)
-    ax.legend(fontsize=16)
+    ax.legend(fontsize=22)
 
     # Increase tick label font size
-    ax.tick_params(axis="both", which="major", labelsize=20)
-    ax.tick_params(axis="both", which="minor", labelsize=18)
+    ax.tick_params(axis="both", which="major", labelsize=22)
+    ax.tick_params(axis="both", which="minor", labelsize=0)
 
     # Add convergence slope triangles for displacement error (smaller)
     draw_multiple_loglog_slopes(
         fig,
         ax,
         origin=(0.8 * x_vals[-1], 1.2 * traction_error[-1]),
-        triangle_width=0.6,
+        triangle_width=0.8,
         slopes=[-2],
         dashed_extra_slopes=True,
         inverted=True,
         color="black",
-        fontsize_factor=1.8,
+        fontsize_factor=2.0,
     )
 
     # Y labels: show label only on left column; on right column remove label text
     # but keep the tick numbering. X labels: show only on bottom row; hide
     # x-axis numbering on the top row.
     if region == "bulk":  # Left column
-        ax.set_ylabel(r"Relative error", fontsize=22)
+        ax.set_ylabel(r"Relative error", fontsize=24)
     else:
         ax.set_ylabel("", fontsize=2)
 
@@ -242,7 +247,7 @@ for setup_type, region, ax, title in configurations:
             if region == "bulk"
             else r"$(N_x \cdot N_t)^{1/2}$"
         )
-        ax.set_xlabel(xlabel, fontsize=22)
+        ax.set_xlabel(xlabel, fontsize=24)
     else:
         # hide x-axis numbering for top row
         ax.tick_params(axis="x", which="both", labelbottom=False)
@@ -252,8 +257,7 @@ for setup_type, region, ax, title in configurations:
 plt.tight_layout()
 
 # Save figure
-figure_path = os.path.join(figures_dir, "convergence_linear_spring_model.png")
-plt.savefig(figure_path, dpi=300, bbox_inches="tight")
+plt.savefig(FIGURE_PATH, dpi=300, bbox_inches="tight")
 plt.close()
 
-print(f"Saved convergence figure to {figure_path}")
+print(f"Saved convergence figure to {FIGURE_PATH}")

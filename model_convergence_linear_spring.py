@@ -10,7 +10,7 @@ import sympy as sym
 from porepy.applications.convergence_analysis import ConvergenceAnalysis
 
 from models import DynamicMomentumBalanceLinearSpringModel
-
+from pp_solvers import IterativeSolverMixin
 
 class Geometry:
     def set_fractures(self) -> None:
@@ -35,7 +35,7 @@ class Geometry:
         self._fractures = [frac_1]
 
     def set_domain(self) -> None:
-        """Domain of the problem."""
+        """Domain for the problem."""
         x = self.units.convert_units(50.0e-3, "m")
         y = self.units.convert_units(25.0e-3, "m")
         box: dict[str, pp.number] = {"xmin": 0, "xmax": x, "ymin": 0, "ymax": y}
@@ -46,7 +46,7 @@ class Geometry:
 
         Returns the lines which surrounds the region to the right of the fracture. The
         lines are named west, north, east and south based on the side of the region they
-        are on. The west line corresponds exactly to the fracture location.
+        are on. The west line corresponds (geometrically) exactly to the fracture.
 
         Returns:
             A tuple containing the lines west, north, east and south which makes up the
@@ -107,7 +107,7 @@ class MiscellaneousConstants:
             The discontinuity location.
 
         """
-        return self.params.get("discontinuity_location", 300.0)
+        return self.params.get("discontinuity_location", 25.0e-3)
 
     def wave_frequency(self) -> float:
         """Frequency of the incidence wave [s^-1].
@@ -124,7 +124,7 @@ class MiscellaneousConstants:
         Material to the left of the discontinuity location has stiffness parameters
         corresponding to the ones set in the solid parameters (shear_modulus and
         lame_lambda). To the right of the discontinuity location, the material
-        parameters are multiplied by the heterogeneity factor.
+        parameters are set from "solid_values_inner_region".
 
         """
         subdomain = self.mdg.subdomains(dim=self.nd)[0]
@@ -940,7 +940,7 @@ class ExactExpressionsAndEvaluationMethods:
     def exact_fracture_traction_and_displacement_jump(
         self, sd: pp.Grid
     ) -> tuple[np.ndarray, np.ndarray]:
-        """"""
+        """Computes exact fracture traction and displacement jump at the fracture."""
         if self.params.get("compressive_setup"):
             stiffness = self.solid.fracture_normal_stiffness
         else:
@@ -958,9 +958,8 @@ class ExactExpressionsAndEvaluationMethods:
         displacement_jump = right_evaluated_mid - left_evaluated_mid
         u = np.zeros((self.nd, sd_frac.num_cells))
 
-        # Component seems illogical at first glance, but I think this is correct. As the
-        # displacement jump is determined with a coordinate system relative to the
-        # fracture and not the global system. I think component 1 is correct here for
+        # As the displacement jump is determined with a coordinate system relative to
+        # the fracture and not the global system, component 1 should be correct here for
         # compressive.
         component = 1 if self.compressive_setup else 0
         u[component, :] = displacement_jump
@@ -1098,6 +1097,7 @@ class Export:
 
 
 class SpringTypeLinearConvergenceSetup(
+    IterativeSolverMixin,
     Geometry,
     MiscellaneousConstants,
     ReflectionTransmissionMethods,
@@ -1106,4 +1106,4 @@ class SpringTypeLinearConvergenceSetup(
     Export,
     DynamicMomentumBalanceLinearSpringModel,
 ):
-    """"""
+    """Model class for the spring-type fracture deformation convergence analyses."""

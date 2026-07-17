@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.ticker as mticker
 
-FONT_SIZE_1 = 14
-FONT_SIZE_2 = 18
+FONT_SIZE_1 = 18
+FONT_SIZE_2 = 22
 
 mpl.rcParams.update(
     {
@@ -30,6 +30,7 @@ FRACTURE_ENDPOINTS = {
     "fracture_4": np.array([[2, 3], [1.5, 3]]) * 25.0e-3 / 8,
     "fracture_5": np.array([[6, 7], [1, 2]]) * 25.0e-3 / 8,
 }
+
 
 def load_data(filepath):
     with open(filepath, "r") as f:
@@ -63,11 +64,12 @@ def build_axes(shape, fracture_name):
     x0, x1 = endpoints[0]
     y0, y1 = endpoints[1]
 
-    length = np.sqrt((x1 - x0)**2 + (y1 - y0)**2)
+    length = np.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2)
 
     x = np.linspace(0, length, nx)
 
     return t, x
+
 
 def maybe_flip(mat, pair):
     return mat[:, ::-1] if pair in FORCE_FLIP_PAIRS else mat
@@ -84,9 +86,8 @@ def plot_pair(frac_a, frac_b, results_dir):
     da = load_fracture(name_a, results_dir)
     db = load_fracture(name_b, results_dir)
 
-    pair = (a, b)
-
     cmap = mpl.colormaps["viridis"].copy()
+    cmap_pw = mpl.colormaps["RdBu_r"].copy()
     cmap.set_bad("white")
 
     fig, axes = plt.subplots(
@@ -96,11 +97,24 @@ def plot_pair(frac_a, frac_b, results_dir):
     fields = [("normal", r"$[\![u]\!]_n$"), ("slip", r"$s$")]
 
     for row, (key, label) in enumerate(fields):
-        A = maybe_flip(da[key], pair)
-        B = maybe_flip(db[key], pair)
+        A = maybe_flip(da[key], (a, b))
+        B = maybe_flip(db[key], (a, b))
 
         vmin = min(np.nanmin(A), np.nanmin(B))
         vmax = max(np.nanmax(A), np.nanmax(B))
+
+        if key == "normal":
+            m = max(
+                np.nanmax(np.abs(A)),
+                np.nanmax(np.abs(B))
+            )
+
+            vmin, vmax = -m, m
+
+        if key == "normal":
+            print(f"\nFracture pair {a}-{b} (normal displacement jump):")
+            print(f"  Fracture {a}: min = {np.nanmin(A):.6e}, max = {np.nanmax(A):.6e}")
+            print(f"  Fracture {b}: min = {np.nanmin(B):.6e}, max = {np.nanmax(B):.6e}")
 
         last_im = None
 
@@ -110,7 +124,13 @@ def plot_pair(frac_a, frac_b, results_dir):
             t, x = build_axes(mat.shape, name_a if col == 0 else name_b)
 
             im = ax.pcolormesh(
-                x, t, mat, shading="auto", cmap=cmap, vmin=vmin, vmax=vmax
+                x,
+                t,
+                mat,
+                shading="auto",
+                cmap=cmap_pw if key == "normal" else cmap,
+                vmin=vmin,
+                vmax=vmax,
             )
 
             last_im = im
@@ -126,7 +146,7 @@ def plot_pair(frac_a, frac_b, results_dir):
 
             ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%.3f"))
         if key == "slip":
-            pad = 0.05
+            pad = 0.068
         else:
             pad = 0.01
         cbar = fig.colorbar(

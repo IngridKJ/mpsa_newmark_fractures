@@ -5,7 +5,10 @@
         },
         {
             "path": "../../workdir/porepy"
-        }
+        },
+        {
+            "path": "../../workdir/pp_solvers"
+        },
     ],
     "settings": {
         "editor.formatOnSave": true,

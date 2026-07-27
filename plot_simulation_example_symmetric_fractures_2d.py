@@ -164,7 +164,7 @@ def plot_pair(frac_a, frac_b, results_dir):
     print("Saved:", out)
 
 
-if __name__ == "__main__":
-    results_dir = "simulation_example_results_2d"
-    for pair in [(1, 4), (2, 5), (3, 6)]:
-        plot_pair(*pair, results_dir)
+
+results_dir = "simulation_example_results_2d"
+for pair in [(1, 4), (2, 5), (3, 6)]:
+    plot_pair(*pair, results_dir)

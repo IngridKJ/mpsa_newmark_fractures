@@ -27,7 +27,7 @@ mpl.rcParams.update(
 # PATHS
 # ============================================================
 root_dir = (
-    "/workspaces/momentum_balance_inertia/simulation_example_results_compare_models"
+    "/workdir/mpsa_newmark_fractures/simulation_example_results_compare_models"
 )
 
 cases_SL_SBB_CL_CBB = ["S_Lin_Lin", "S_Lin_BB", "C_Coul_Lin", "C_Coul_BB"]
@@ -353,9 +353,8 @@ def plot_traction_ratio(data):
 # ============================================================
 # RUN
 # ============================================================
-if __name__ == "__main__":
-    for cases in all_cases:
-        data = load_all()
-        plot_all(data)
+for cases in all_cases:
+    data = load_all()
+    plot_all(data)
 
-    plot_traction_ratio(data)
+plot_traction_ratio(data)

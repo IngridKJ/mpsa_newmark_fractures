@@ -7,7 +7,8 @@ from model_example_compare_models import (
 import porepy as pp
 import os
 
-COEFF = 3
+SAVE_FIGURES = True
+
 # Base directory (project root = where this script lives)
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -30,7 +31,9 @@ MODEL_TAGS = {
 for tag in MODEL_TAGS:
     os.makedirs(os.path.join(MAIN_RESULTS_DIR, f"{tag}"), exist_ok=True)
 
-# Model parameters
+# Model parameters and refinement
+COEFF = 3
+
 MATERIAL_CONSTANTS = {
     "fracture_gap": 0.0,
     "dilation_angle": 0.0,
@@ -55,8 +58,8 @@ SOLVER_PARAMS = {
 
 def make_parameter_dictionary(model_tag: str) -> dict:
     """Create model and solver parameters."""
-    final_time = 1.0390625e-05
-    num_steps = 190
+    final_time = 1.05e-05
+    num_steps = 200
     dt = final_time / num_steps
 
     time_manager = pp.TimeManager(
@@ -105,3 +108,6 @@ if __name__ == "__main__":
     run_model("C_Coul_BB", CBB)
     run_model("S_Lin_Lin", SL)
     run_model("S_Lin_BB", SBB)
+
+    if SAVE_FIGURES:
+        import plot_simulation_example_model_comparison

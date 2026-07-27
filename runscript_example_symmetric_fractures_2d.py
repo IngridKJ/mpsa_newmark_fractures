@@ -11,7 +11,8 @@ from models_nonlinear_fracture_deformation import (
 units = pp.Units()
 
 # Run-parameters
-COARSE = False
+SAVE_FIGURES = True
+COARSE = True
 
 class GeometryBoundaryConditionAndWaveFunction:
     def set_fractures(self) -> None:
@@ -321,13 +322,18 @@ params = {
     },
 }
 
-model = CBB(params)
-model.results_dir = "simulation_example_results_2d"
-other_params = {
-    "progressbars": True,
-    "nl_max_iterations": 30,
-    "nl_convergence_inc_atol": 1.0e-10,
-    "nl_convergence_res_atol": 1.0e-10,
-}
-runner = pp.ModelRunner(model, other_params)
-runner.run()
+
+if __name__ == "__main__":
+    model = CBB(params)
+    model.results_dir = "simulation_example_results_2d"
+    other_params = {
+        "progressbars": True,
+        "nl_max_iterations": 30,
+        "nl_convergence_inc_atol": 1.0e-10,
+        "nl_convergence_res_atol": 1.0e-10,
+    }
+    runner = pp.ModelRunner(model, other_params)
+    runner.run()
+    
+    if SAVE_FIGURES:
+        import plot_simulation_example_symmetric_fractures_2d

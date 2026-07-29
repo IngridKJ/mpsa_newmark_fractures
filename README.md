@@ -1,5 +1,5 @@
 # mpsa_newmark_fractures
-This repository contains runscripts and model class setups needed for reproducing the results in the paper "Modeling of elastic wave propagation in fractured media with spring-type and frictional contact deformation models".
+This repository contains runscripts and model class setups needed for reproducing the results in the paper "Elastic wave propagation in fractured media with spring-type and frictional contact deformation models".
 
 That includes:
 * Runscripts for the convergence analyses.
@@ -8,7 +8,7 @@ That includes:
 * Utility material which is used in the various simulations.
 
 Some run scripts support one or more of the following optional parameters:
-* `COARSE = True`: Run the model using a coarser grid and (possibly) larger time step. Setting `COARSE = False` uses the grid and time-step sizes reported in the paper.
+* `COARSE = True` (default): Run the model using a coarser grid and (possibly) larger time step. Setting `COARSE = False` uses the grid and time-step sizes reported in the paper.
 * `SAVE_FIGURES = True`: Generate and save figures.
 * `RUN_MODELS = False`: Skip model execution and generate plots from existing result files. NOTE: This option requires that the corresponding runscript has been executed previously.
 

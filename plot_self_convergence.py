@@ -27,7 +27,7 @@ mpl.rcParams.update(
 # PATHS
 # ============================================================
 root_dir = "/workdir/mpsa_newmark_fractures/convergence_analysis_results"
-cases = ["CL", "CBB"]
+cases = ["C_Coul_Lin", "C_Coul_BB"]
 
 fig_dir = os.path.join(root_dir, "figures/heatmaps_and_lineplots")
 os.makedirs(fig_dir, exist_ok=True)
@@ -131,7 +131,7 @@ def build_axes(shape):
 # LIMITS
 # ============================================================
 def compute_limits(data, key):
-    all_vals = np.concatenate([data["CL"][key].ravel(), data["CBB"][key].ravel()])
+    all_vals = np.concatenate([data["C_Coul_Lin"][key].ravel(), data["C_Coul_BB"][key].ravel()])
     return np.nanmin(all_vals), np.nanmax(all_vals)
 
 
@@ -275,7 +275,7 @@ def plot_all(data):
         print("Saved:", out)
 
 
-def plot_line_last_timestep(data, case="CL"):
+def plot_line_last_timestep(data, case="C_Coul_Lin"):
     base = data[case]
 
     # ========================================================

@@ -44,8 +44,8 @@ os.makedirs(FIGURES_DIR, exist_ok=True)
 
 # Configurations and create directories for each one:
 MODEL_TAGS = {
-    "CL": SelfConvergenceCL,
-    "CBB": SelfConvergenceCBB,
+    "C_Coul_Lin": SelfConvergenceCL,
+    "C_Coul_BB": SelfConvergenceCBB,
 }
 
 for tag in MODEL_TAGS:
@@ -239,5 +239,5 @@ def run_convergence_analysis(
 
 
 if __name__ == "__main__":
-    run_convergence_analysis("CL", SelfConvergenceCL, run_models=RUN_MODELS)
-    run_convergence_analysis("CBB", SelfConvergenceCBB, run_models=RUN_MODELS)
+    run_convergence_analysis("C_Coul_Lin", SelfConvergenceCL, run_models=RUN_MODELS)
+    run_convergence_analysis("C_Coul_BB", SelfConvergenceCBB, run_models=RUN_MODELS)

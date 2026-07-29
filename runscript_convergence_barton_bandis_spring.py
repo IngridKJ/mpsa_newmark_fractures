@@ -26,7 +26,7 @@ SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
 MAIN_RESULTS_DIR = os.path.join(SCRIPT_PATH, "convergence_analysis_results")
 
 # Subfolders
-RESULTS_DIR = os.path.join(MAIN_RESULTS_DIR, "SBB")
+RESULTS_DIR = os.path.join(MAIN_RESULTS_DIR, "S_Lin_BB")
 FIGURES_DIR = os.path.join(MAIN_RESULTS_DIR, "figures")
 
 # Ensure directories exist

@@ -118,7 +118,7 @@ def save_errors(
 
     Parameters:
         results_dir: Results directory path.
-        model_tag: Model tag (e.g., "CL", "CBB").
+        model_tag: Model tag (e.g., "C_Coul_Lin", "C_Coul_BB").
         num_cells_matrix: Array of matrix cell counts.
         num_cells_frac: Array of fracture cell counts.
         num_time_steps: Array of time step counts.
@@ -158,7 +158,7 @@ def plot_convergence(
 
     Parameters:
         results_dir: Results directory path for saving figures.
-        model_tag: Model tag (e.g., "CL", "CBB").
+        model_tag: Model tag (e.g., "C_Coul_Lin", "C_Coul_BB").
         x_matrix: x-axis values for matrix displacement.
         x_fracture: x-axis values for fracture quantities.
         errors_disp: Matrix displacement error array.

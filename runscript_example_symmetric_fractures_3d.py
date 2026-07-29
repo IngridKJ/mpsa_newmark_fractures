@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # Run-parameters
-COARSE = False
+COARSE = True
 
 class GeometryBoundaryConditionAndWaveFunction:
     def fracture_network_2d(self) -> None:

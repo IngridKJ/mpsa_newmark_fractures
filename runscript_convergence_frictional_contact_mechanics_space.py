@@ -24,7 +24,7 @@ from utils.convergence_analysis import (
 )
 
 # Run-parameters
-RUN_MODELS = True
+RUN_MODELS = False
 COARSE = False
 
 # Refinement coefficients for the convergence analysis
@@ -339,12 +339,13 @@ def run_convergence_analysis(
     else:
         print("Loading saved convergence data (no simulation run)...")
 
-        _, _, time_steps, errors = load_errors(
+        cells_matrix, cells_frac, time_steps, errors = load_errors(
             MAIN_RESULTS_DIR, model_tag
         )
+
         cells_times = {
-            "matrix": time_steps,
-            "fracture": time_steps,
+            "matrix": cells_matrix,
+            "fracture": cells_frac,
         }
 
     x_matrix = np.asarray(cells_times["matrix"])

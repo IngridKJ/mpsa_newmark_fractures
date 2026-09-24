@@ -385,7 +385,9 @@ class MethodsForBartonBandisConvergenceSetup:
             T_numerical = max_velocity / max_incident_velocity
             print("\nT_numerical", T_numerical)
 
-            _, T_theoretical = self.compute_theoretical_T()
+            _, T_theoretical = self.compute_theoretical_T(
+                M=self.params["steps_per_period"]
+            )
 
             relative_error_T = abs(T_theoretical - T_numerical) / T_theoretical
             print(
@@ -400,13 +402,16 @@ class MethodsForBartonBandisConvergenceSetup:
                 )
         return data
 
-    def compute_theoretical_T(self):
+    def compute_theoretical_T(self, M):
         """The theoretical transmission coefficient for a Barton-Bandis fracture.
 
         The transmission coefficient can be derived from the stress continuity condition
         and the displacement discontinuity condition (jump in displacement equals the
         Barton-Bandis term) across the fracture. This method provides a numerical
         approximation to the theoretical T.
+
+        Parameters:
+            M: Number of time-steps per period of the incidence wave.
 
         Reference:
             See Zhao and Cai (2001): Transmission of Elastic P-waves across Single
@@ -427,9 +432,8 @@ class MethodsForBartonBandisConvergenceSetup:
 
         Te = 1 / (2 * f)
 
-        m = 100000
         t_end = self.time_manager.time_final
-        dt = Te / m
+        dt = Te / M
         t = np.arange(0, t_end, dt)
 
         x1 = self.discontinuity_location
@@ -459,7 +463,7 @@ class MethodsForBartonBandisConvergenceSetup:
                 u_max * (K_n + (z * v[i - 1]) / (u_max)) ** 2
             )
 
-            v[i] = 1 / m * numerator / (denominator_1 + denominator_2) + v[i - 1]
+            v[i] = 1 / M * numerator / (denominator_1 + denominator_2) + v[i - 1]
 
         T_non = np.max(v) / V_inc
         return np.max(v), T_non

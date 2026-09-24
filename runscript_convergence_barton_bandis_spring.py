@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 # Run-parameters
 RUN_MODEL = True
 COARSE = True
+PRINT_T_TH_ACCURACY = True
 
 # Base directory (project root = where this script lives)
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -47,7 +48,7 @@ cs_max = 1.0e-3
 As_and_kns = [
     (5.0e-8, 2.0e11),
 ]
-
+M = 100000
 u_max = 1.0e-7
 if RUN_MODEL:
     for A, kn in As_and_kns:
@@ -97,6 +98,7 @@ if RUN_MODEL:
                 "material_constants": {"solid": solid},
                 "discontinuity_location": 25.0e-3,
                 "wave_amplitude": A,
+                "steps_per_period": M,
                 "wave_frequency": wave_frequency,
                 "linear_solver": {
                     # "options": 
@@ -107,10 +109,28 @@ if RUN_MODEL:
             }
 
             model = SpringTypeBartonBandisConvergenceSetup(params)
+
             model.filename_path = RESULTS_FILE_PATH
             other_params = {"progressbars": True, "max_iterations": 50}
             runner = pp.ModelRunner(model, other_params)
             runner.run()
+      
+            if PRINT_T_TH_ACCURACY:
+                _, T_th = model.compute_theoretical_T(M=M)
+
+                _, T_th_coarsest = model.compute_theoretical_T(M=M/10)
+                _, T_th_coarser = model.compute_theoretical_T(M=M/2)
+                _, T_th_finer = model.compute_theoretical_T(M=M*2)
+
+                rel_error_coarsest = abs(T_th_coarsest - T_th) / abs(T_th)
+                rel_error_coarser = abs(T_th_coarser - T_th) / abs(T_th)
+                rel_error_finer = abs(T_th_finer - T_th) / abs(T_th)
+                
+                print(f"\nTheoretical T (M={M}): {T_th}")
+                print(f"Relative error in % (M={M/10}): {rel_error_coarsest * 100}")
+                print(f"Relative error in % (M={M/2}): {rel_error_coarser * 100}")
+                print(f"Relative error in % (M={M*2}): {rel_error_finer * 100}")
+
 
 # Plot convergence errors
 import matplotlib.pyplot as plt

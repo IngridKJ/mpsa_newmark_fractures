@@ -337,3 +337,7 @@ if __name__ == "__main__":
     
     if SAVE_FIGURES:
         import plot_simulation_example_symmetric_fractures_2d
+
+        plot_simulation_example_symmetric_fractures_2d.plot_all(
+            model.results_dir
+        )

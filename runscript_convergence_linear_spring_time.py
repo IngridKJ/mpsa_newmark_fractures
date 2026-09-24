@@ -115,6 +115,7 @@ for setup_type in ["shear", "compressive"]:
                 "compressive_setup": setup_type == "compressive",
                 "heterogeneity_type": "simple",
                 "solid_values_inner_region": solid_values_inner_region,
+                "solver_statistics_file_name": "solver_statistics.json",
                 "wave_amplitude": A,
                 "times_to_export": [final_time],
                 "linear_solver": {
@@ -128,7 +129,12 @@ for setup_type in ["shear", "compressive"]:
             model = SpringTypeLinearConvergenceSetup(params)
             model.filename_path = RESULTS_FILE_PATH_ROCK
             model.filename_path_fracture = RESULTS_FILE_PATH_FRACTURE
-            other_params = {"progressbars": True, "max_iterations": 50}
+            other_params = {
+                "progressbars": True,
+                "nl_max_iterations": 50,
+                "nl_convergence_inc_atol": 1.0e-8,
+                "nl_convergence_res_atol": 1.0e-8,
+            }
 
             runner = pp.ModelRunner(model=model, params=other_params)
             runner.run()

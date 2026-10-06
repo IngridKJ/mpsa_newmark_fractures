@@ -217,7 +217,7 @@ def plot_convergence(
             ax1,
             origin=(0.8 * x_matrix[-1], 1.1 * errors_disp[-1]),
             triangle_width=0.5,
-            slopes=[-1.5],
+            slopes=[-2],
             dashed_extra_slopes=True,
             inverted=True,
             color="black",
@@ -244,7 +244,7 @@ def plot_convergence(
             ax2,
             origin=(0.8 * x_fracture[-1], 1.1 * errors_jump[-1]),
             triangle_width=0.5,
-            slopes=[-1.5],
+            slopes=[-2],
             dashed_extra_slopes=True,
             inverted=True,
             color="black",
@@ -306,7 +306,7 @@ def run_convergence_analysis(
     """Run self-convergence analysis for a model and/or plot the results."""
     if run_models:
         print(
-            f"\n{'=' * 70}\nRunning {model_tag} time convergence analysis\n{'=' * 70}\n"
+            f"\n{'=' * 70}\nRunning {model_tag} convergence analysis\n{'=' * 70}\n"
         )
         fine_model = run_model(COEFFS[-1], model_class, model_tag, reference_flag=True)
 

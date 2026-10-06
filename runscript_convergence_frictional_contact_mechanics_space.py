@@ -271,7 +271,7 @@ def run_convergence_analysis(
     """Run self-convergence analysis for a model and/or plot the results."""
     if run_models:
         print(
-            f"\n{'=' * 70}\nRunning {model_tag} time convergence analysis\n{'=' * 70}\n"
+            f"\n{'=' * 70}\nRunning {model_tag} convergence analysis\n{'=' * 70}\n"
         )
         fine_model = run_model(COEFFS[-1], model_class, model_tag, reference_flag=True)
 
@@ -348,7 +348,7 @@ def run_convergence_analysis(
             "fracture": cells_frac,
         }
 
-    x_matrix = np.asarray(cells_times["matrix"])
+    x_matrix = np.asarray(cells_times["matrix"]) ** (1/2)
     x_fracture = np.asarray(cells_times["fracture"])
     plot_convergence(
         MAIN_RESULTS_DIR,

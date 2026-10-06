@@ -117,19 +117,12 @@ if RUN_MODEL:
       
             if PRINT_T_TH_ACCURACY:
                 _, T_th = model.compute_theoretical_T(M=M)
-
-                _, T_th_coarsest = model.compute_theoretical_T(M=M/10)
                 _, T_th_coarser = model.compute_theoretical_T(M=M/2)
-                _, T_th_finer = model.compute_theoretical_T(M=M*2)
 
-                rel_error_coarsest = abs(T_th_coarsest - T_th) / abs(T_th)
                 rel_error_coarser = abs(T_th_coarser - T_th) / abs(T_th)
-                rel_error_finer = abs(T_th_finer - T_th) / abs(T_th)
-                
                 print(f"\nTheoretical T (M={M}): {T_th}")
-                print(f"Relative error in % (M={M/10}): {rel_error_coarsest * 100}")
-                print(f"Relative error in % (M={M/2}): {rel_error_coarser * 100}")
-                print(f"Relative error in % (M={M*2}): {rel_error_finer * 100}")
+                print(f"\nTheoretical T (M={M/2}): {T_th_coarser}")
+                print(f"Relative error in % (M={M/2}): {rel_error_coarser}")
 
 
 # Plot convergence errors

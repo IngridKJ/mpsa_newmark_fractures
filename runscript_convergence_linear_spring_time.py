@@ -41,7 +41,7 @@ FIGURE_PATH = os.path.join(FIGURES_DIR, "convergence_linear_spring_model_time.pn
 header = "num_cells, num_time_steps, displacement_error, traction_error\n"
 
 for setup_type in ["shear", "compressive"]:
-    SETUP_FOLDER = f"SL_{setup_type}_time"
+    SETUP_FOLDER = f"S_Lin_Lin_{setup_type}_time"
     OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, SETUP_FOLDER)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -107,7 +107,7 @@ for setup_type in ["shear", "compressive"]:
                 "meshing_arguments": {
                     "cell_size": cs_max / 2**refinement_coefficients[-1]
                 },
-                "folder_name": f"visualization_spring_{setup_type}_ref_{coeff}",
+                "folder_name": f"visualization_spring_{setup_type}_ref_{coeff}_time",
                 "grid_type": "simplex",
                 "material_constants": {"solid": solid},
                 "discontinuity_location": 25.0e-3,
@@ -149,7 +149,7 @@ ks = [(2.0e11, "2.0e11")]
 all_data = {}
 
 for setup_type in setups:
-    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, f"SL_{setup_type}_time")
+    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, f"S_Lin_Lin_{setup_type}_time")
 
     for k_val, k_str in ks:
         filename_bulk = os.path.join(OUTPUT_DIR, "errors.txt")
@@ -185,8 +185,6 @@ for setup_type, region, ax, title in configurations:
     displacement_error = data[:, 2]
     traction_error = data[:, 3]
 
-    # Calculate x-axis: (N_x * N_t)^(1/3) for bulk, (N_x * N_t)^(1/2) for fracture
-    exponent = 1.0 / 3.0 if region == "bulk" else 1.0 / 2.0
     x_vals = (num_time_steps)
 
     # Plot displacement error: black with circle markers

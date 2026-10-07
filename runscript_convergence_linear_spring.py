@@ -41,7 +41,7 @@ FIGURE_PATH = os.path.join(FIGURES_DIR, "convergence_linear_spring_model.png")
 header = "num_cells, num_time_steps, displacement_error, traction_error\n"
 
 for setup_type in ["shear", "compressive"]:
-    SETUP_FOLDER = f"SL_{setup_type}"
+    SETUP_FOLDER = f"S_Lin_Lin_{setup_type}"
     OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, SETUP_FOLDER)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -143,7 +143,7 @@ ks = [(2.0e11, "2.0e11")]
 all_data = {}
 
 for setup_type in setups:
-    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, f"SL_{setup_type}")
+    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, f"S_Lin_Lin_{setup_type}")
 
     for k_val, k_str in ks:
         filename_bulk = os.path.join(OUTPUT_DIR, "errors.txt")

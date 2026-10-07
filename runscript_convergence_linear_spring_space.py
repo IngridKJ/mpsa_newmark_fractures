@@ -41,7 +41,7 @@ FIGURE_PATH = os.path.join(FIGURES_DIR, "convergence_linear_spring_model_space.p
 header = "num_cells, num_time_steps, displacement_error, traction_error\n"
 
 for setup_type in ["shear", "compressive"]:
-    SETUP_FOLDER = f"SL_{setup_type}_space"
+    SETUP_FOLDER = f"S_Lin_Lin_{setup_type}_space"
     OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, SETUP_FOLDER)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -65,7 +65,7 @@ for setup_type in ["shear", "compressive"]:
                     file.write(header)
                 with open(RESULTS_FILE_PATH_FRACTURE, "w") as file:
                     file.write(header)
-            dt = 6.25e-8
+            dt = 6.25e-8 / 2
 
             time_manager = pp.TimeManager(
                 schedule=[0.0, final_time],
@@ -108,7 +108,7 @@ for setup_type in ["shear", "compressive"]:
                 "meshing_arguments": {
                     "cell_size": cs_max / 2**coeff
                 },
-                "folder_name": f"visualization_spring_{setup_type}_ref_{coeff}",
+                "folder_name": f"visualization_spring_{setup_type}_ref_{coeff}_space",
                 "grid_type": "simplex",
                 "material_constants": {"solid": solid},
                 "discontinuity_location": 25.0e-3,
@@ -150,7 +150,7 @@ ks = [(2.0e11, "2.0e11")]
 all_data = {}
 
 for setup_type in setups:
-    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, f"SL_{setup_type}_space")
+    OUTPUT_DIR = os.path.join(MAIN_RESULTS_DIR, f"S_Lin_Lin_{setup_type}_space")
 
     for k_val, k_str in ks:
         filename_bulk = os.path.join(OUTPUT_DIR, "errors.txt")
@@ -187,7 +187,7 @@ for setup_type, region, ax, title in configurations:
     traction_error = data[:, 3]
 
     # Calculate x-axis: (N_x * N_t)^(1/3) for bulk, (N_x * N_t)^(1/2) for fracture
-    exponent = 1.0 / 3.0 if region == "bulk" else 1.0 / 2.0
+    exponent = 1.0 / 2.0 if region == "bulk" else 1.0 / 1.0
     x_vals = (num_cells) ** exponent
 
     # Plot displacement error: black with circle markers
@@ -231,9 +231,9 @@ for setup_type, region, ax, title in configurations:
     draw_multiple_loglog_slopes(
         fig,
         ax,
-        origin=(1.1 * x_vals[-2], 1.25 * traction_error[-2]),
+        origin=(1.3 * x_vals[-2], 1.05 * traction_error[-2]),
         triangle_width=0.8,
-        slopes=[-2],
+        slopes=[-1.5],
         dashed_extra_slopes=True,
         inverted=False,
         color="black",
@@ -250,9 +250,9 @@ for setup_type, region, ax, title in configurations:
 
     if setup_type == "shear":  # Bottom row
         xlabel = (
-            r"$(N_x)^{1/3}$"
+            r"$(N_x)^{1/2}$"
             if region == "bulk"
-            else r"$(N_x)^{1/2}$"
+            else r"$N_x$"
         )
         ax.set_xlabel(xlabel, fontsize=24)
     else:

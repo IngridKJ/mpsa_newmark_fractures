@@ -131,7 +131,7 @@ if data.ndim == 1:
 
 num_cells = data[:, 0]
 num_time_steps = data[:, 1]
-x_axis = (num_cells * num_time_steps) ** (1 / 3)
+x_axis = (num_time_steps)
 transmission_coeff_error = data[:, 2]
 
 # Create figure with error vs mesh refinement
@@ -146,7 +146,7 @@ ax.loglog(
     label="Transmission coefficient",
 )
 
-ax.set_xlabel("$(N_x \\cdot N_t)^{1/3}$", fontsize=24)
+ax.set_xlabel("$N_t$", fontsize=24)
 ax.set_ylabel("Relative error", fontsize=24)
 ax.grid(True, which="both", alpha=0.3)
 ax.legend(fontsize=22)

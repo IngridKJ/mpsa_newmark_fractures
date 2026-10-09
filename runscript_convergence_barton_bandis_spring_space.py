@@ -159,9 +159,9 @@ ax.tick_params(axis="both", which="minor", labelsize=20)
 draw_multiple_loglog_slopes(
     fig,
     ax,
-    origin=(0.7 * x_axis[-1], 2.25 * transmission_coeff_error[-1]),
-    triangle_width=1.0,
-    slopes=[-2, -1],  # 1st and 2nd order convergence
+    origin=(0.6 * x_axis[-1], 2.0 * transmission_coeff_error[-1]),
+    triangle_width=1.5,
+    slopes=[-1],  # 1st and 2nd order convergence
     dashed_extra_slopes=True,
     inverted=False,
     color="black",

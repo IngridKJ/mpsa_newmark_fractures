@@ -17,8 +17,8 @@ from model_convergence_linear_spring import SpringTypeLinearConvergenceSetup
 logger = logging.getLogger(__name__)
 
 # Run-parameters
-RUN_MODEL = False
-COARSE = False
+RUN_MODEL = True
+COARSE = True
 
 # Base directory (project root = where this script lives)
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))

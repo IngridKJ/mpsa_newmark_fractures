@@ -10,26 +10,23 @@ from model_convergence_contact_mechanics import (
 from matplotlib.ticker import LogLocator, LogFormatterMathtext
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from porepy.applications.convergence_analysis import ConvergenceAnalysis
 
-# from convergence_metrics import (
-#     matrix_overlap_l2_components_p1,
-#     fracture_overlap_l2_components_p1,
-# )
+
 from plotting.plot_utils import draw_multiple_loglog_slopes
 
 from utils.convergence_analysis import (
     DataExtractor,
-    compute_errors,
     save_errors,
     load_errors,
 )
 
 # Run-parameters
-RUN_MODELS = False
-COARSE = False
+RUN_MODELS = True
+COARSE = True
 
 # Refinement coefficients for the convergence analysis
-COEFFS = [0, 1, 2] if COARSE else [0, 1, 2, 3, 4]
+COEFFS = [0, 1] if COARSE else [0, 1, 2, 3, 4, 5]
 
 # Base directory (project root = where this script lives)
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -107,6 +104,7 @@ def make_parameter_dictionary(
         "material_constants": {"solid": solid, "numerical": numerical},
         "wave_amplitude": 5.0e-5,
         "wave_frequency": 100.0e3,
+        "times_to_export": [final_time],
         "solver_statistics_file_name": "solver_statistics.json",
         "linear_solver": {
             # "options":
@@ -270,35 +268,88 @@ def plot_convergence(
     plt.close(fig)
 
 
-def relative_l2_error(coarse, fine):
-    """Compute the relative L2 error between two arrays."""
-    coarse = np.asarray(coarse)
-    fine = np.asarray(fine)
+def compute_errors(coarse_model, fine_model, grid_rtol=1e-10, grid_atol=1e-12):
+    """Compute relative L2 errors between coarse and fine models.
 
-    fine_norm = np.linalg.norm(fine)
+    The coarse and fine models must have identical matrix and fracture grids.
+    Grid equality is checked through the cell-center coordinates.
+    """
+    coarse_matrix_grid = DataExtractor.matrix_grid(coarse_model)
+    fine_matrix_grid = DataExtractor.matrix_grid(fine_model)
 
-    if fine_norm == 0.0:
-        return np.linalg.norm(coarse - fine)
+    coarse_fracture_grid = DataExtractor.fracture_grid(coarse_model)
+    fine_fracture_grid = DataExtractor.fracture_grid(fine_model)
 
-    return np.linalg.norm(coarse - fine) / fine_norm
+    def check_same_grid(coarse_grid, fine_grid, name):
+        coarse_centers = np.asarray(coarse_grid.cell_centers)
+        fine_centers = np.asarray(fine_grid.cell_centers)
 
+        if coarse_centers.shape != fine_centers.shape:
+            raise ValueError(
+                f"{name} grids differ in cell-center shape: "
+                f"{coarse_centers.shape} vs {fine_centers.shape}"
+            )
 
-def compute_errors(coarse_model, fine_model):
-    """Compute relative L2 errors between coarse and fine models."""
-    extractors = {
-        "disp": DataExtractor.extract_matrix_displacement,
-        "jump": DataExtractor.extract_fracture_displacement_jump,
-        "trac": DataExtractor.extract_contact_traction,
-    }
+        if not np.allclose(
+            coarse_centers,
+            fine_centers,
+            rtol=grid_rtol,
+            atol=grid_atol,
+        ):
+            # Useful diagnostic without doing any expensive work.
+            max_diff = np.max(np.abs(coarse_centers - fine_centers))
+            raise ValueError(
+                f"{name} grids do not match. "
+                f"Maximum cell-center difference: {max_diff:.3e}"
+            )
 
-    errors = {}
-    for name, extractor in extractors.items():
-        coarse = extractor(coarse_model)
-        fine = extractor(fine_model)
-        errors[name] = relative_l2_error(coarse, fine)
+    # These checks are O(number of cells), vectorized in NumPy.
+    check_same_grid(coarse_matrix_grid, fine_matrix_grid, "Matrix")
+    check_same_grid(coarse_fracture_grid, fine_fracture_grid, "Fracture")
 
-    return errors["disp"], errors["jump"], errors["trac"]
+    # Extract solutions only after confirming that the grids match.
+    coarse_disp = DataExtractor.extract_matrix_displacement(coarse_model)
+    fine_disp = DataExtractor.extract_matrix_displacement(fine_model)
 
+    coarse_jump = DataExtractor.extract_fracture_displacement_jump(coarse_model)
+    fine_jump = DataExtractor.extract_fracture_displacement_jump(fine_model)
+
+    coarse_trac = DataExtractor.extract_contact_traction(coarse_model)
+    fine_trac = DataExtractor.extract_contact_traction(fine_model)
+
+    coarse_disp = coarse_disp.ravel("F")
+    fine_disp = fine_disp.ravel("F")
+    coarse_jump = coarse_jump.ravel("F")
+    fine_jump = fine_jump.ravel("F")
+    coarse_trac = coarse_trac.ravel("F")
+    fine_trac = fine_trac.ravel("F")
+
+    return (
+        ConvergenceAnalysis.lp_error(
+            coarse_matrix_grid,
+            true_array=fine_disp,
+            approx_array=coarse_disp,
+            is_cc=True,
+            p=2,
+            relative=True,
+        ),
+        ConvergenceAnalysis.lp_error(
+            coarse_fracture_grid,
+            true_array=fine_jump,
+            approx_array=coarse_jump,
+            is_cc=True,
+            p=2,
+            relative=True,
+        ),
+        ConvergenceAnalysis.lp_error(
+            coarse_fracture_grid,
+            true_array=fine_trac,
+            approx_array=coarse_trac,
+            is_cc=True,
+            p=2,
+            relative=True,
+        ),
+    )
 
 def run_convergence_analysis(
     model_tag: str, model_class, run_models: bool = True

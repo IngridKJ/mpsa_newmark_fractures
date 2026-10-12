@@ -29,7 +29,7 @@ mpl.rcParams.update(
 root_dir = "/workdir/mpsa_newmark_fractures/convergence_analysis_results"
 cases = ["C_Coul_Lin", "C_Coul_BB"]
 
-fig_dir = os.path.join(root_dir, "figures/heatmaps_and_lineplots")
+fig_dir = os.path.join(root_dir, "figures")
 os.makedirs(fig_dir, exist_ok=True)
 
 
@@ -73,7 +73,7 @@ def load_all():
         normal = load_data(os.path.join(base, "displacement_jump_n.txt"))
 
         # ========================================================
-        # FRACTURE OPENING (NEW - like reference script)
+        # FRACTURE OPENING
         # ========================================================
         opening = load_data(os.path.join(base, "fracture_opening.txt"))
 
@@ -90,7 +90,7 @@ def load_all():
         tau_n_nondim = load_data(os.path.join(base, "traction_n_nondim.txt"))
 
         # ========================================================
-        # SLIP TENDENCY (ABS ratio + tolerance)
+        # SLIP TENDENCY
         # ========================================================
         slip = np.full_like(tau_t_nondim, np.nan)
 
@@ -110,170 +110,6 @@ def load_all():
         }
 
     return data
-
-
-# ============================================================
-# AXES
-# ============================================================
-def build_axes(shape):
-    n_time, n_space = shape
-
-    final_time = 1.0e-5 * (140 / 160)
-    time = np.linspace(0, final_time, n_time)
-
-    L = 0.016
-    space = np.linspace(0, L, n_space)[::-1]
-
-    return time, space
-
-
-# ============================================================
-# LIMITS
-# ============================================================
-def compute_limits(data, key):
-    all_vals = np.concatenate([data["C_Coul_Lin"][key].ravel(), data["C_Coul_BB"][key].ravel()])
-    return np.nanmin(all_vals), np.nanmax(all_vals)
-
-
-# ============================================================
-# CONTOURS
-# ============================================================
-N_CONTOURS = {
-    "tangential": 7,
-    "normal": 7,
-    "slip": 7,
-}
-
-
-def make_levels(vmin, vmax, n_levels):
-    levels = np.linspace(vmin, vmax, n_levels)
-    if vmin < 0 < vmax:
-        levels = np.unique(np.sort(np.append(levels, 0.0)))
-    return levels
-
-
-# ============================================================
-# PLOT
-# ============================================================
-def plot_all(data):
-
-    limits = {
-        "tangential": compute_limits(data, "tangential"),
-        "normal": compute_limits(data, "normal"),
-        "slip": compute_limits(data, "slip"),
-    }
-
-    contour_levels = {
-        key: make_levels(*limits[key], N_CONTOURS[key]) for key in N_CONTOURS
-    }
-
-    cmap = mpl.colormaps["viridis"].copy()
-    cmap.set_bad("white")
-    cmap_pw = mpl.colormaps["RdBu_r"].copy()
-
-    t_cut = 0.2e-5
-
-    fields = [
-        ("Tangential jump", "tangential", r"$[\![u]\!]_\tau$", True),
-        ("Slip tendency", "slip", r"$s$", False),
-        ("Normal jump", "normal", r"$[\![u]\!]_n$", True),
-    ]
-
-    for title, key, cbar_label, use_contours in fields:
-        fig, subfigs = plt.subplots(
-            1, 2, figsize=(14, 6), layout="constrained"
-        )
-
-        ims = []
-
-        for i, case in enumerate(cases):
-            base = data[case]
-            t_axis, x_axis = build_axes(base[key].shape)
-
-            vmin, vmax = limits[key]
-            ax = subfigs[i]
-            if key in ("normal", "tangential"):
-                vmax_abs = max(abs(vmin), abs(vmax))
-                vmin = -vmax_abs
-                vmax = vmax_abs
-
-                im = ax.pcolormesh(
-                    x_axis,
-                    t_axis,
-                    base[key],
-                    cmap=cmap_pw,
-                    vmin=vmin,
-                    vmax=vmax,
-                    shading="auto",
-                )
-            else:
-                im = ax.pcolormesh(
-                    x_axis,
-                    t_axis,
-                    base[key],
-                    cmap=cmap,
-                    vmin=vmin,
-                    vmax=vmax,
-                    shading="auto",
-                )
-            ims.append(im)
-
-            ax.set_xlabel("Position along fracture [m]")
-            ax.set_ylabel("Time [s]")
-            ax.xaxis.set_major_formatter(mticker.FormatStrFormatter("%.3f"))
-
-            if use_contours:
-                t_start = np.searchsorted(t_axis, t_cut)
-
-                masked = np.full_like(base[key], np.nan)
-                masked[t_start:, :] = base[key][t_start:, :]
-
-                levels = contour_levels[key]
-
-                neg_levels = levels[levels < 0]
-                pos_levels = levels[levels > 0]
-
-                if len(neg_levels) > 0:
-                    ax.contour(
-                        x_axis,
-                        t_axis,
-                        masked,
-                        levels=neg_levels,
-                        colors="paleturquoise",
-                        linewidths=2.5,
-                        alpha=0.5
-                    )
-
-                if len(pos_levels) > 0:
-                    ax.contour(
-                        x_axis,
-                        t_axis,
-                        masked,
-                        levels=pos_levels,
-                        colors="lightcoral",
-                        linewidths=2.5,
-                        alpha=0.5
-                    )
-
-                if 0.0 in levels:
-                    ax.contour(
-                        x_axis,
-                        t_axis,
-                        masked,
-                        levels=[0.0],
-                        colors="black",
-                        linewidths=2.5,
-                    )
-
-        cbar = fig.colorbar(ims[-1], ax=subfigs, location="right", shrink=0.9, pad=0.01)
-        cbar.set_label(cbar_label, fontsize=FONT_SIZE_3)
-
-        out = os.path.join(fig_dir, f"{key}_CL_vs_CBB.png")
-        plt.savefig(out, dpi=300, bbox_inches="tight")
-        plt.close()
-
-        print("Saved:", out)
-
 
 def plot_line_last_timestep(data, case="C_Coul_Lin"):
     base = data[case]
@@ -354,7 +190,5 @@ def plot_line_last_timestep(data, case="C_Coul_Lin"):
 # ============================================================
 if __name__ == "__main__":
     data = load_all()
-    plot_all(data)
-
     for case in cases:
         plot_line_last_timestep(data, case)

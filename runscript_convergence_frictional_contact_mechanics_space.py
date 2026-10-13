@@ -24,8 +24,8 @@ from utils.convergence_analysis import (
 )
 
 # Run-parameters
-RUN_MODELS = False
-COARSE = False
+RUN_MODELS = True
+COARSE = True
 
 # Refinement coefficients for the convergence analysis
 COEFFS = [0, 1, 2] if COARSE else [0, 1, 2, 3, 4]
@@ -105,6 +105,7 @@ def make_parameter_dictionary(
         "material_constants": {"solid": solid, "numerical": numerical},
         "wave_amplitude": 5.0e-5,
         "wave_frequency": 100.0e3,
+        "times_to_export": [final_time],
         "solver_statistics_file_name": "solver_statistics.json",
         "linear_solver": {
             # "options":

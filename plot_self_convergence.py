@@ -27,7 +27,7 @@ mpl.rcParams.update(
 # PATHS
 # ============================================================
 root_dir = "/workdir/mpsa_newmark_fractures/convergence_analysis_results"
-cases = ["C_Coul_Lin", "C_Coul_BB"]
+cases = ["C_Coul_Lin_space", "C_Coul_BB_space"]
 
 fig_dir = os.path.join(root_dir, "figures")
 os.makedirs(fig_dir, exist_ok=True)

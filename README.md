@@ -16,23 +16,26 @@ Not all run scripts support all of these parameters.
 
 ## Verification 
 ### Linear spring-type deformation
-Convergence against a known analytical solution for a fractured medium, similar to the convergence setup with absorbing boundaries mentioned above. In this case there is a fracture located in the middle of the domain and at the intersection between the two (potentially) dissimilar media.
-* Runscript: 
-  * [runscript_convergence_linear_spring](./runscript_convergence_linear_spring.py)
+Spatial and temporal convergence against a known analytical solution for a fractured medium. The fracture is located in the middle of the domain and at the intersection between the two (potentially) dissimilar media.
+* Runscripts: 
+  * [runscript_convergence_linear_spring_space](./runscript_convergence_linear_spring_space.py)
+  * [runscript_convergence_linear_spring_time](./runscript_convergence_linear_spring_time.py)
 * The model class setup:
   * [model_convergence_linear_spring](./model_convergence_linear_spring.py)
 
 ### Barton-Bandis spring type deformation
-Convergence of the transmission coefficient. We perform a comparison between the theoretical and numerical peak velocity after a wavetop has crossed a fracture.
-* Runscript: 
-  * [runscript_convergence_barton_bandis_spring](./runscript_convergence_barton_bandis_spring.py)
+Spatial and temporal convergence of the transmission coefficient. We perform a comparison between the theoretical and numerical peak velocity after a wavetop has crossed a fracture.
+* Runscripts: 
+  * [runscript_convergence_barton_bandis_spring_space](./runscript_convergence_barton_bandis_spring_space.py)
+  * [runscript_convergence_barton_bandis_spring_time](./runscript_convergence_barton_bandis_spring_time.py)
 * The model class setup is named `SpringTypeBartonBandisConvergenceSetup` and is found within:
   * [models_nonlinear_fracture_deformation](./models_nonlinear_fracture_deformation.py)
 
 ### Fracture contact mechanics with friction
-The fracture contact mechanics with friction is verified by self-convergence analyses for both the linear and the Barton-Bandis gap function. The wave is imposed by a time-dependent Dirichlet condition on the left boundary and eventually hits a diagonal fracture.
-* Runscript:
-  * [runscript_convergence_frictional_contact_mechanics](./runscript_convergence_frictional_contact_mechanics.py)
+The fracture contact mechanics with friction is verified by spatial and temporal self-convergence analyses for both the linear and the Barton-Bandis gap function. The wave is imposed by a time-dependent Dirichlet condition on the left boundary and eventually hits a diagonal fracture.
+* Runscripts:
+  * [runscript_convergence_frictional_contact_mechanics_space](./runscript_convergence_frictional_contact_mechanics_space.py)
+  * [runscript_convergence_frictional_contact_mechanics_time](./runscript_convergence_frictional_contact_mechanics_time.py)
 * The model class setups are named `ContactModelBartonBandisGapFunction` and
   `ContactModelLinearGapFunction`, and are found within:
   * [models_nonlinear_fracture_deformation](./models_nonlinear_fracture_deformation.py)

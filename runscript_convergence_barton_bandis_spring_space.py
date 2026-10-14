@@ -99,6 +99,7 @@ if RUN_MODEL:
                 "wave_amplitude": A,
                 "steps_per_period": M,
                 "wave_frequency": wave_frequency,
+                "times_to_export": [final_time],
                 "linear_solver": {
                     # "options": 
                     #     {"gmres": {

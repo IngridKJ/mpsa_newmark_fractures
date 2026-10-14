@@ -111,6 +111,7 @@ def load_all():
 
     return data
 
+
 def plot_line_last_timestep(data, case="C_Coul_Lin"):
     base = data[case]
 
@@ -133,7 +134,19 @@ def plot_line_last_timestep(data, case="C_Coul_Lin"):
     tau_n = tau_n[:n]
 
     fracture_length = 0.016
-    x = np.linspace(0, fracture_length, n)[::-1]
+
+    # Cell centers, matching the original reversed coordinate ordering
+    x = (np.arange(n) + 0.5) * fracture_length / n
+    x = x[::-1]
+
+    # Cell boundaries for piecewise constant plotting
+    cell_edges = np.linspace(0, fracture_length, n + 1)
+
+    # Reverse the data so values correspond to the increasing cell boundaries
+    opening = opening[::-1]
+    slip = slip[::-1]
+    tau_t = tau_t[::-1]
+    tau_n = tau_n[::-1]
 
     # ========================================================
     # PLOT
@@ -144,18 +157,35 @@ def plot_line_last_timestep(data, case="C_Coul_Lin"):
     ax1.set_ylabel("Fracture opening [m]", color="black")
     ax1.set_ylim(
         -np.nanmax(opening) * 0.02, np.nanmax(opening) * 1.3
-    ) 
+    )
+
     ax1_right = ax1.twinx()
-    ax1_right.set_ylim(-np.nanmax(slip) * 0.018, np.nanmax(slip) * 1.6)
+    ax1_right.set_ylim(
+        -np.nanmax(slip) * 0.018, np.nanmax(slip) * 1.6
+    )
     ax1_right.set_ylabel("Slip Tendency", color="black")
 
-    line1 = ax1.plot(x, opening, "k-", linewidth=3.0, label="Fracture opening")
-    line2 = ax1_right.plot(x, slip, "darkgray", linewidth=3.0, label="Slip tendency")
+    line1 = ax1.stairs(
+        opening,
+        cell_edges,
+        color="black",
+        linewidth=2.0,
+        label="Fracture opening",
+        baseline=None,
+    )
+    line2 = ax1_right.stairs(
+        slip,
+        cell_edges,
+        color="darkgray",
+        linewidth=2.0,
+        label="Slip tendency",
+        baseline=None,
+    )
 
     ax1.tick_params(axis="x", labelbottom=False)
 
-    lines = line1 + line2
-    labels = [l.get_label() for l in lines]
+    lines = [line1, line2]
+    labels = [line.get_label() for line in lines]
     ax1.legend(lines, labels, loc="upper right")
     ax1.grid(True, alpha=0.3)
 
@@ -164,10 +194,34 @@ def plot_line_last_timestep(data, case="C_Coul_Lin"):
     ax2.set_ylabel("Contact traction [Pa]")
     ax2.set_ylim(
         -1.0e7, 2.75e7
-    ) 
-    ax2.plot(x, tau_t, "g-", linewidth=3.0, label="Tangential traction")
-    ax2.plot(x, tau_n, "k--", linewidth=3.0, label="Friction bound (positive)")
-    ax2.plot(x, -tau_n, "k-.", linewidth=3.0, label="Friction bound (negative)")
+    )
+
+    ax2.stairs(
+        tau_t,
+        cell_edges,
+        color="green",
+        linewidth=2.0,
+        label="Tangential traction",
+        baseline=None,
+    )
+    ax2.stairs(
+        tau_n,
+        cell_edges,
+        color="black",
+        linestyle="--",
+        linewidth=2.0,
+        label="Friction bound (positive)",
+        baseline=None,
+    )
+    ax2.stairs(
+        -tau_n,
+        cell_edges,
+        color="black",
+        linestyle="-.",
+        linewidth=2.0,
+        label="Friction bound (negative)",
+        baseline=None,
+    )
 
     ax2.axhline(0, color="black", linewidth=0.5, alpha=0.5)
     ax2.legend(loc="upper right")

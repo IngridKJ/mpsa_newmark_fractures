@@ -26,7 +26,7 @@ RUN_MODELS = True
 COARSE = True
 
 # Refinement coefficients for the convergence analysis
-COEFFS = [0, 1] if COARSE else [0, 1, 2, 3, 4, 5]
+COEFFS = [0, 1, 2] if COARSE else [0, 1, 2, 3, 4, 5]
 
 # Base directory (project root = where this script lives)
 SCRIPT_PATH = os.path.dirname(os.path.abspath(__file__))

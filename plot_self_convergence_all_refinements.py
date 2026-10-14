@@ -106,12 +106,12 @@ for ANALYSIS_TYPE in ANALYSIS_TYPES:
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman", "Times", "DejaVu Serif"],
-        "font.size": 14,
-        "axes.labelsize": 16,
-        "xtick.labelsize": 15,
-        "ytick.labelsize": 15,
-        "legend.fontsize": 13,
-        "legend.title_fontsize": 13,
+        "font.size": 18,
+        "axes.labelsize": 18,
+        "xtick.labelsize": 18,
+        "ytick.labelsize": 18,
+        "legend.fontsize": 17,
+        "legend.title_fontsize": 16,
         "lines.linewidth": 1.8,
         "axes.formatter.use_mathtext": True,
     })
@@ -165,7 +165,7 @@ for ANALYSIS_TYPE in ANALYSIS_TYPES:
                 label=rf"$r = {level}$",
             )
 
-        ax.set_ylabel("Tangential contact traction [Pa]")
+        ax.set_ylabel("Traction [Pa]")
         ax.grid(True, alpha=0.25)
 
         # Integer tick values with the power of ten shown separately
@@ -177,10 +177,10 @@ for ANALYSIS_TYPE in ANALYSIS_TYPES:
         formatter.set_useOffset(False)
         ax.yaxis.set_major_formatter(formatter)
 
-        ax.tick_params(axis="both", which="major", labelsize=15)
+        ax.tick_params(axis="both", which="major", labelsize=18)
 
         ax.legend(
-            title=r"Refinement level, $r$",
+            title=r"Tangential contact traction for:",
             ncol=3,
             frameon=True,
         )

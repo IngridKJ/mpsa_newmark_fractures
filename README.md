@@ -2,19 +2,19 @@
 This repository contains runscripts and model class setups needed for reproducing the results in the paper "Elastic wave propagation in fractured media with spring-type and frictional contact deformation models".
 
 That includes:
-* Runscripts for the convergence analyses.
+* Runscripts for all convergence analyses.
 * Runscripts for all simulation examples.
 * Standardized model class setup for solving the elastic wave equation in media with deforming fractures using PorePy (https://github.com/pmgbergen/porepy).
 * Utility material which is used in the various simulations.
 
 Some run scripts support one or more of the following optional parameters:
-* `COARSE = True` (default): Run the model using a coarser grid and (possibly) larger time step. Setting `COARSE = False` uses the grid and time-step sizes reported in the paper.
+* `COARSE = True` (default): Some of the setups may be time consuming and/or generate large amounts of visualization files. The setups can be run in a `COARSE` setting, meaning that a coarser grid and/or larger time steps are used. Setting `COARSE = False` uses the grid and time-step sizes reported in the paper. 
 * `SAVE_FIGURES = True`: Generate and save figures.
 * `RUN_MODELS = False`: Skip model execution and generate plots from existing result files. NOTE: This option requires that the corresponding runscript has been executed previously.
 
 Not all run scripts support all of these parameters.
 
-## Verification 
+## Verification
 ### Linear spring-type deformation
 Spatial and temporal convergence against a known analytical solution for a fractured medium. The fracture is located in the middle of the domain and at the intersection between the two (potentially) dissimilar media.
 * Runscripts: 
@@ -41,6 +41,7 @@ The fracture contact mechanics with friction is verified by spatial and temporal
   * [models_nonlinear_fracture_deformation](./models_nonlinear_fracture_deformation.py)
 
 ### Verification results
+All convergence analyses and plotting scripts can readily be run by the file [run_all_convergence_scripts](./run_all_convergence_scripts.py).
 Upon running the different verification setups, figures, exported quantities and errors are saved in a directory with the name `convergence_analysis_results`.
 
 ## Simulation examples
